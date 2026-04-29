@@ -14,6 +14,11 @@ import plotly.express as px
 from datetime import datetime
 import requests
 import json
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # ============================================================================
 # PAGE CONFIGURATION
@@ -115,17 +120,28 @@ def get_weather_data(governorate):
         lon = gov_row['Longitude'].values[0]
         
         # OpenWeather API call
-        api_key = 'c5fb13c2ba4cca935c39ee13f8c506a5'
+        api_key = os.getenv('OPENWEATHER_API_KEY')
+        
+        # Check if API key exists
+        if not api_key or api_key == '' or len(api_key) < 10:
+            raise ValueError(f"API key invalid (length: {len(api_key) if api_key else 0})")
+        
         url = f"https://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
         
-        response = requests.get(url, timeout=5)
+        response = requests.get(url, timeout=10)
+        
+        if response.status_code != 200:
+            raise ValueError(f"API Error: Status {response.status_code} - {response.text[:100]}")
+        
         if response.status_code == 200:
             data = response.json()
             
             # Extract weather data
             temp = data['main']['temp']
             humidity = data['main']['humidity']
-            rainfall = data.get('rain', {}).get('1h', 0) * 1000  # Convert to mm
+            
+            # Get rainfall from API (only contains data when currently raining)
+            rainfall = data.get('rain', {}).get('1h', 0) * 1000
             
             # Estimate pH based on region (Egypt average is ~7.5)
             ph = 7.5
@@ -140,22 +156,22 @@ def get_weather_data(governorate):
             }
         else:
             # Fallback to dataset average if API fails
-            gov_data = crop_rec_df.sample(n=5)
+            # Use FIXED average from entire dataset (not random sample)
             return {
-                'temperature': gov_data['temperature'].mean(),
-                'humidity': gov_data['humidity'].mean(),
-                'rainfall': gov_data['rainfall'].mean(),
-                'ph': gov_data['ph'].mean(),
+                'temperature': crop_rec_df['temperature'].mean(),
+                'humidity': crop_rec_df['humidity'].mean(),
+                'rainfall': crop_rec_df['rainfall'].mean(),
+                'ph': crop_rec_df['ph'].mean(),
                 'source': 'Dataset Average (API failed)'
             }
     except Exception as e:
-        st.warning(f"Could not fetch real weather data: {e}. Using dataset average.")
-        gov_data = crop_rec_df.sample(n=5)
+        # Fallback to dataset average if API fails
+        # Use FIXED average from entire dataset (not random sample)
         return {
-            'temperature': gov_data['temperature'].mean(),
-            'humidity': gov_data['humidity'].mean(),
-            'rainfall': gov_data['rainfall'].mean(),
-            'ph': gov_data['ph'].mean(),
+            'temperature': crop_rec_df['temperature'].mean(),
+            'humidity': crop_rec_df['humidity'].mean(),
+            'rainfall': crop_rec_df['rainfall'].mean(),
+            'ph': crop_rec_df['ph'].mean(),
             'source': 'Dataset Average (Error)'
         }
 
@@ -260,28 +276,34 @@ def generate_explanation(crop, n, p, k, temp, humidity, ph, rainfall):
 
 # Crop name mapping from recommendation model to yield models
 CROP_NAME_MAPPING = {
-    'MUSKMELON': 'Cantaloupes and other melons',
-    'CHICKPEA': 'Chick peas, dry',
-    'MOTHBEANS': 'Beans, dry',
-    'WHEAT': 'Barley',
-    'RICE': 'Barley',
-    'MAIZE': 'Barley',
-    'COTTON': 'Spices & Herbs',
-    'SUGARCANE': 'Spices & Herbs',
-    'GROUNDNUT': 'Beans, dry',
-    'LENTIL': 'Chick peas, dry',
-    'ORANGE': 'Apricots',
-    'BANANA': 'Bananas',
-    'PAPAYA': 'Bananas',
-    'COCONUT': 'Spices & Herbs',
-    'WATERMELON': 'Cantaloupes and other melons',
-    'POMEGRANATE': 'Apricots',
-    'APPLE': 'Apples',
-    'GRAPES': 'Apricots',
-    'MANGO': 'Bananas',
-    'ONION': 'Carrots and turnips',
-    'POTATO': 'Cabbages',
-    'TOMATO': 'Cabbages'
+    'muskmelon': 'Cantaloupes and other melons',
+    'chickpea': 'Chick peas, dry',
+    'mothbeans': 'Beans, dry',
+    'wheat': 'Barley',
+    'rice': 'Barley',
+    'maize': 'Barley',
+    'cotton': 'Spices & Herbs',
+    'sugarcane': 'Spices & Herbs',
+    'groundnut': 'Beans, dry',
+    'lentil': 'Chick peas, dry',
+    'orange': 'Apricots',
+    'banana': 'Bananas',
+    'papaya': 'Bananas',
+    'coconut': 'Spices & Herbs',
+    'watermelon': 'Cantaloupes and other melons',
+    'pomegranate': 'Apricots',
+    'apple': 'Apples',
+    'grapes': 'Apricots',
+    'mango': 'Bananas',
+    'onion': 'Carrots and turnips',
+    'potato': 'Cabbages',
+    'tomato': 'Cabbages',
+    'blackgram': 'Beans, dry',
+    'coffee': 'Spices & Herbs',
+    'jute': 'Spices & Herbs',
+    'kidneybeans': 'Beans, dry',
+    'mungbean': 'Beans, dry',
+    'pigeonpeas': 'Chick peas, dry',
 }
 
 def predict_yield(crop, year=2026):
@@ -437,25 +459,35 @@ if st.session_state.current_step == 1:
         
         if selected_gov:
             st.session_state.wizard_data['governorate'] = selected_gov
-            
+
             # Get real weather data from API
             weather_data = get_weather_data(selected_gov)
             st.session_state.wizard_data['weather'] = weather_data
-            
+
             st.success(f"✓ Selected: **{selected_gov}**")
-            
+
             # Display weather information
             st.subheader("🌤️ Weather & Climate Data")
             
+            # Data source indicator
+            source = weather_data.get('source', 'Unknown')
+            if source == 'OpenWeatherMap API':
+                st.success(f"✅ Data Source: {source}")
+            else:
+                st.warning(f"ℹ️ Data Source: {source} - Using historical averages")
+
+            # Refresh button
+            if st.button("🔄 Refresh Live Data", key='refresh_weather', use_container_width=True):
+                st.rerun()
+
             col_w1, col_w2 = st.columns(2)
             with col_w1:
                 st.metric("🌡️ Temperature", f"{weather_data['temperature']:.1f}°C")
                 st.metric("💧 Rainfall", f"{weather_data['rainfall']:.1f} mm")
-            
+
             with col_w2:
                 st.metric("💨 Humidity", f"{weather_data['humidity']:.1f}%")
-                st.metric("🧪 Soil pH", f"{weather_data['ph']:.2f}")
-            
+
             # Next button
             st.divider()
             if st.button("➡️ Next: Enter Soil Data", key='next_step1', use_container_width=True):
@@ -507,7 +539,7 @@ elif st.session_state.current_step == 2:
             n, p, k,
             weather['temperature'],
             weather['humidity'],
-            weather['ph'],
+            ph,  # Use pH from Layer 2 slider (user-controlled)
             weather['rainfall']
         )
         
