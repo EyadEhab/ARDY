@@ -1,0 +1,22 @@
+FROM python:3.11-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    gcc \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy requirements
+COPY requirements.txt .
+
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy scripts
+COPY generate_datasets.py .
+COPY train_models.py .
+
+# Run data generation and model training
+CMD ["sh", "-c", "python generate_datasets.py && python train_models.py"]
