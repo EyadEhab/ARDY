@@ -258,13 +258,42 @@ def generate_explanation(crop, n, p, k, temp, humidity, ph, rainfall):
     
     return "\n".join(reasons)
 
+# Crop name mapping from recommendation model to yield models
+CROP_NAME_MAPPING = {
+    'MUSKMELON': 'Cantaloupes and other melons',
+    'CHICKPEA': 'Chick peas, dry',
+    'MOTHBEANS': 'Beans, dry',
+    'WHEAT': 'Barley',
+    'RICE': 'Barley',
+    'MAIZE': 'Barley',
+    'COTTON': 'Spices & Herbs',
+    'SUGARCANE': 'Spices & Herbs',
+    'GROUNDNUT': 'Beans, dry',
+    'LENTIL': 'Chick peas, dry',
+    'ORANGE': 'Apricots',
+    'BANANA': 'Bananas',
+    'PAPAYA': 'Bananas',
+    'COCONUT': 'Spices & Herbs',
+    'WATERMELON': 'Cantaloupes and other melons',
+    'POMEGRANATE': 'Apricots',
+    'APPLE': 'Apples',
+    'GRAPES': 'Apricots',
+    'MANGO': 'Bananas',
+    'ONION': 'Carrots and turnips',
+    'POTATO': 'Cabbages',
+    'TOMATO': 'Cabbages'
+}
+
 def predict_yield(crop, year=2026):
     """Predict yield for a crop in a given year"""
     
-    if crop not in yield_models:
+    # Map crop name if needed
+    mapped_crop = CROP_NAME_MAPPING.get(crop, crop)
+    
+    if mapped_crop not in yield_models:
         return None
     
-    model_data = yield_models[crop]
+    model_data = yield_models[mapped_crop]
     model = model_data['model']
     
     # Predict yield
