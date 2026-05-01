@@ -385,6 +385,8 @@ if 'wizard_data' not in st.session_state:
         'p': None,
         'k': None,
         'ph': None,
+        'feddan': None,
+        'hectares': None,
         'crop_predictions': None
     }
 
@@ -594,12 +596,68 @@ elif st.session_state.current_step == 3:
             if yield_pred:
                 crop_predictions.append(yield_pred)
     
+    # Land size input (Feddan)
+    st.subheader("📏 Your Land Size")
+    
+    col_land1, col_land2 = st.columns([1, 1])
+    
+    with col_land1:
+        feddan = st.number_input(
+            "How many Feddan do you have?",
+            min_value=0.1,
+            max_value=10000.0,
+            value=1.0,
+            step=0.1,
+            help="1 Feddan = 0.42 Hectares (Egyptian land measurement unit)"
+        )
+    
+    with col_land2:
+        hectares = feddan * 0.42
+        st.metric("📐 Land in Hectares", f"{hectares:.2f} Ha")
+    
+    st.info(f"💡 Conversion: **{feddan:.1f} Feddan** = **{hectares:.2f} Hectares**")
+    
+    st.divider()
+    
     if crop_predictions and len(crop_predictions) > 0:
         # Display yield forecast chart
         fig = create_yield_chart(crop_predictions)
         st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.warning("No yield predictions available. Please go back and select crops first.")
+        
+        st.divider()
+        
+        # Total Production Forecast (in Tons)
+        st.subheader("🚜 Total Production Forecast")
+        st.markdown(f"*Based on your land size of **{feddan:.1f} Feddan ({hectares:.2f} Ha)**")
+        
+        # Create production cards for each crop
+        prod_cols = st.columns(3)
+        
+        for i, pred in enumerate(crop_predictions):
+            with prod_cols[i]:
+                # Calculate total tons: yield (tonnes/ha) × hectares
+                total_tons = pred['predicted_yield'] * hectares
+                avg_total_tons = pred['avg_yield'] * hectares
+                
+                # Store in prediction for report
+                pred['feddan'] = feddan
+                pred['hectares'] = hectares
+                pred['total_tons'] = total_tons
+                pred['avg_total_tons'] = avg_total_tons
+                
+                st.markdown(f"""
+                    <div class='crop-card'>
+                        <h3 style='margin:0; color:#27ae60;'>{pred['crop'].upper()}</h3>
+                        <hr style='border-color:#2ecc71; opacity:0.3;'>
+                        <p style='margin:5px 0;'><b>Yield:</b> {pred['predicted_yield']:.0f} T/Ha</p>
+                        <p style='margin:5px 0; font-size:1.2rem; color:#27ae60;'><b>Total: {total_tons:.1f} Tons</b></p>
+                        <p style='margin:5px 0; font-size:0.9rem; color:#7f8c8d;'>Avg: {avg_total_tons:.1f} Tons</p>
+                    </div>
+                """, unsafe_allow_html=True)
+        
+        # Save feddan to session state for Layer 4 report
+        st.session_state.wizard_data['feddan'] = feddan
+        st.session_state.wizard_data['hectares'] = hectares
         
         st.divider()
         
@@ -607,7 +665,7 @@ elif st.session_state.current_step == 3:
         st.subheader("📊 Detailed Yield Forecast")
         
         for pred in crop_predictions:
-            with st.expander(f"{pred['crop'].upper()} - {pred['predicted_yield']:.0f} Tonnes/Ha"):
+            with st.expander(f"{pred['crop'].upper()} - {pred['predicted_yield']:.0f} Tonnes/Ha ({pred['total_tons']:.1f} Total Tons)"):
                 
                 col1, col2, col3 = st.columns(3)
                 with col1:
@@ -618,7 +676,18 @@ elif st.session_state.current_step == 3:
                     change = ((pred['predicted_yield'] - pred['avg_yield']) / pred['avg_yield'] * 100)
                     st.metric("Change", f"{change:+.1f}%")
                 
+                st.divider()
+                
+                st.write(f"**For Your Land ({feddan:.1f} Feddan = {hectares:.2f} Ha):**")
+                col_t1, col_t2 = st.columns(2)
+                with col_t1:
+                    st.metric("📦 Predicted Total", f"{pred['total_tons']:.1f} Tons")
+                with col_t2:
+                    st.metric("📦 Avg Total", f"{pred['avg_total_tons']:.1f} Tons")
+                
                 st.info(f"📈 Model R² Score: {pred['r2_score']:.4f} (Historical data: {pred['min_year']}-{pred['max_year']})")
+    else:
+        st.warning("No yield predictions available. Please go back and select crops first.")
     
     st.divider()
     
@@ -662,10 +731,39 @@ elif st.session_state.current_step == 4:
     
     st.divider()
     
-    st.subheader("🎯 Recommended Crops")
+    # Land Size Summary
+    st.subheader("📏 Land Size")
     
-    for i, pred in enumerate(st.session_state.wizard_data['crop_predictions'], 1):
-        st.write(f"**#{i} {pred['crop'].upper()}** - Confidence: {pred['confidence']*100:.1f}%")
+    # Get feddan from session state or default
+    feddan = st.session_state.wizard_data.get('feddan', 1.0)
+    hectares = feddan * 0.42
+    
+    col_land1, col_land2 = st.columns(2)
+    with col_land1:
+        st.metric("📐 Land (Feddan)", f"{feddan:.1f} Feddan")
+    with col_land2:
+        st.metric("📐 Land (Hectares)", f"{hectares:.2f} Ha")
+    
+    st.divider()
+    
+    st.subheader("🎯 Recommended Crops & Production")
+    
+    # Get crop predictions with yield data
+    crop_predictions = []
+    if st.session_state.wizard_data['crop_predictions']:
+        for pred in st.session_state.wizard_data['crop_predictions']:
+            yield_pred = predict_yield(pred['crop'])
+            if yield_pred:
+                # Calculate total tons
+                yield_pred['total_tons'] = yield_pred['predicted_yield'] * hectares
+                yield_pred['avg_total_tons'] = yield_pred['avg_yield'] * hectares
+                crop_predictions.append(yield_pred)
+    
+    for i, pred in enumerate(crop_predictions, 1):
+        st.write(f"**#{i} {pred['crop'].upper()}**")
+        st.write(f"   - Confidence: {st.session_state.wizard_data['crop_predictions'][i-1]['confidence']*100:.1f}%")
+        st.write(f"   - Yield: {pred['predicted_yield']:.0f} Tonnes/Ha")
+        st.write(f"   - **Total Production: {pred['total_tons']:.1f} Tons** (for {feddan:.1f} Feddan)")
     
     st.divider()
     
@@ -702,6 +800,8 @@ elif st.session_state.current_step == 4:
                 'p': None,
                 'k': None,
                 'ph': None,
+                'feddan': None,
+                'hectares': None,
                 'crop_predictions': None
             }
             st.rerun()
