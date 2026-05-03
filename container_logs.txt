@@ -1,0 +1,160 @@
+======================================================================
+RETRAINING ML MODELS WITH REAL DATASETS
+======================================================================
+
+[PHASE 1] Training Crop Recommendation Models...
+??? Loaded crop recommendation dataset: (2200, 8)
+  Features: ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+  Target crops: 22 unique crops
+  Crop distribution:
+label
+rice           100
+maize          100
+chickpea       100
+kidneybeans    100
+pigeonpeas     100
+mothbeans      100
+mungbean       100
+blackgram      100
+lentil         100
+pomegranate    100
+banana         100
+mango          100
+grapes         100
+watermelon     100
+muskmelon      100
+apple          100
+orange         100
+papaya         100
+coconut        100
+cotton         100
+jute           100
+coffee         100
+Name: count, dtype: int64
+
+  Training set: 1760 samples
+  Test set: 440 samples
+
+  Training XGBoost classifier...
+  ??? XGBoost Accuracy: 0.9886
+  Training Random Forest classifier...
+  ??? Random Forest Accuracy: 0.9955
+  ??? Saved XGBoost model
+  ??? Saved Random Forest model
+  ??? Saved crop label encoder
+  ??? Saved feature names
+
+[PHASE 2] Training Yield Forecasting Models...
+??? Loaded yield dataset: (2645, 6)
+  Crops in dataset: 78
+  Year range: 1990 - 2024
+
+  Training models for 15 crops...
+  ??? Spices & Herbs                 | R??: 0.6248 | 2026 Pred: 913.66 tonnes/ha
+  ??? Apples                         | R??: 0.8437 | 2026 Pred: 29608.40 tonnes/ha
+  ??? Apricots                       | R??: 0.0900 | 2026 Pred: 15850.35 tonnes/ha
+  ??? Artichokes                     | R??: 0.2415 | 2026 Pred: 23933.35 tonnes/ha
+  ??? Bananas                        | R??: 0.5282 | 2026 Pred: 47956.77 tonnes/ha
+  ??? Barley                         | R??: 0.3221 | 2026 Pred: 3630.89 tonnes/ha
+  ??? Beans, dry                     | R??: 0.3571 | 2026 Pred: 3835.39 tonnes/ha
+  ??? Broad_Beans_Dry                | R??: 0.4116 | 2026 Pred: 3939.60 tonnes/ha
+  ??? Broad_Beans_Green              | R??: 0.0146 | 2026 Pred: 12213.53 tonnes/ha
+  ??? Cabbages                       | R??: 0.1003 | 2026 Pred: 30519.25 tonnes/ha
+  ??? Cantaloupes and other melons   | R??: 0.6825 | 2026 Pred: 28277.02 tonnes/ha
+  ??? Carrots and turnips            | R??: 0.4055 | 2026 Pred: 30226.34 tonnes/ha
+  ??? Cauliflowers and broccoli      | R??: 0.6138 | 2026 Pred: 29571.69 tonnes/ha
+  ??? Chick peas, dry                | R??: 0.6284 | 2026 Pred: 2749.02 tonnes/ha
+
+  ??? Saved all yield models
+
+======================================================================
+MODEL TRAINING COMPLETE
+======================================================================
+
+??? Crop Recommendation Models:
+  - XGBoost Accuracy: 0.9886
+  - Random Forest Accuracy: 0.9955
+  - Crops: 22
+
+??? Yield Forecasting Models:
+  - Models trained: 14
+  - Average R?? Score: 0.4189
+
+??? All models saved to models/ directory
+======================================================================
+======================================================================
+RETRAINING ML MODELS WITH REAL DATASETS
+======================================================================
+
+[PHASE 1] Training Crop Recommendation Models...
+??? Loaded crop recommendation dataset: (2200, 8)
+  Features: ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+  Target crops: 22 unique crops
+  Crop distribution:
+label
+rice           100
+maize          100
+chickpea       100
+kidneybeans    100
+pigeonpeas     100
+mothbeans      100
+mungbean       100
+blackgram      100
+lentil         100
+pomegranate    100
+banana         100
+mango          100
+grapes         100
+watermelon     100
+muskmelon      100
+apple          100
+orange         100
+papaya         100
+coconut        100
+cotton         100
+jute           100
+coffee         100
+Name: count, dtype: int64
+
+  Training set: 1760 samples
+  Test set: 440 samples
+
+  Training XGBoost classifier...
+======================================================================
+RETRAINING ML MODELS WITH REAL DATASETS
+======================================================================
+
+[PHASE 1] Training Crop Recommendation Models...
+??? Loaded crop recommendation dataset: (2200, 8)
+  Features: ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+  Target crops: 22 unique crops
+  Crop distribution:
+label
+rice           100
+maize          100
+chickpea       100
+kidneybeans    100
+pigeonpeas     100
+mothbeans      100
+mungbean       100
+blackgram      100
+lentil         100
+pomegranate    100
+banana         100
+mango          100
+grapes         100
+watermelon     100
+muskmelon      100
+apple          100
+orange         100
+papaya         100
+coconut        100
+cotton         100
+jute           100
+coffee         100
+Name: count, dtype: int64
+
+  Training set: 1760 samples
+  Test set: 440 samples
+
+  Training XGBoost classifier...

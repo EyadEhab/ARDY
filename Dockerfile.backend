@@ -7,14 +7,25 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y \
     curl \
     gcc \
+    libgomp1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt && \
-    pip install --no-cache-dir gunicorn
+# Install Python dependencies and upgrade pip
+RUN pip install --no-cache-dir --upgrade pip
+
+# Install requirements with a retry loop for unstable networks
+RUN for i in 1 2 3 4 5; do \
+    pip install --no-cache-dir --default-timeout=1000 --retries 20 -r requirements.txt && break || \
+    (echo "Retry $i failed, waiting 30s..." && sleep 30); \
+    done
+
+RUN for i in 1 2 3 4 5; do \
+    pip install --no-cache-dir --default-timeout=1000 --retries 20 gunicorn && break || \
+    (echo "Retry $i failed, waiting 30s..." && sleep 30); \
+    done
 
 # Copy application files
 COPY backend.py .

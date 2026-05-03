@@ -9,6 +9,7 @@ docker-compose up --build
 That's it! Everything will automatically:
 - ✅ Train ML models with real data
 - ✅ Start backend API (port 5000)
+- ✅ Start Plant Doctor API (port 8000)
 - ✅ Start wizard dashboard (port 8501)
 - ✅ Set up networking between services
 
@@ -19,6 +20,8 @@ That's it! Everything will automatically:
 Once running, open your browser:
 
 **Wizard Dashboard**: http://localhost:8501
+
+**Plant Doctor API (New)**: http://localhost:8000
 
 **API Health Check**: http://localhost:5000/api/health
 
