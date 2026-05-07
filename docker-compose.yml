@@ -6,10 +6,17 @@ services:
       dockerfile: Dockerfile.model-trainer
     container_name: egyptagri-model-trainer
     volumes:
+      - ./data:/app/data:ro
       - ./models:/app/models
     networks:
       - egyptagri-network
     restart: "no"
+    healthcheck:
+      test: ["CMD", "test", "-f", "/app/models/xgb_crop_classifier.pkl"]
+      interval: 5s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
 
   # Backend API Service
   backend:
@@ -53,8 +60,6 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_CLIENT_TOOLBAR_MODE=minimal
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-demo_key_for_testing}
-      - BACKEND_URL=http://backend:5000
-      - PLANT_DOCTOR_URL=http://plant-doctor-api:8000
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models:ro
@@ -64,72 +69,6 @@ services:
     depends_on:
       backend:
         condition: service_healthy
-    restart: unless-stopped
-
-  # Plant Doctor - Crop Disease Detection API
-  plant-doctor-api:
-    build:
-      context: ./deploy
-      dockerfile: Dockerfile
-    container_name: plant-doctor-api
-    ports:
-      - "8000:8000"
-    environment:
-      - MODEL_PATH=/app/models/crop_model.h5
-      - TREATMENTS_PATH=/app/models/treatments.json
-    volumes:
-      - ./models:/app/models:ro
-    networks:
-      - egyptagri-network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    depends_on:
-      redis:
-        condition: service_healthy
-      db:
-        condition: service_healthy
-      model-trainer:
-        condition: service_completed_successfully
-
-  # PostgreSQL - Persistent Storage for User History & Profiles
-  db:
-    image: postgres:15-alpine
-    container_name: egyptagri-db
-    environment:
-      - POSTGRES_USER=admin
-      - POSTGRES_PASSWORD=plant_doctor_secure
-      - POSTGRES_DB=plant_doctor_db
-    ports:
-      - "5432:5432"
-    volumes:
-      - ./postgres_data:/var/lib/postgresql/data
-    networks:
-      - egyptagri-network
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U admin -d plant_doctor_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-    restart: unless-stopped
-
-  # Redis - Enterprise Message Broker & Cache
-  redis:
-    image: redis:7-alpine
-    container_name: egyptagri-redis
-    ports:
-      - "6379:6379"
-    networks:
-      - egyptagri-network
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
     restart: unless-stopped
 
 networks:

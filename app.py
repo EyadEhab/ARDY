@@ -71,9 +71,7 @@ st.markdown("""
 # BACKEND CONFIGURATION
 # ============================================================================
 
-import os
-BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:5000")
-PLANT_DOCTOR_URL = os.getenv("PLANT_DOCTOR_URL", "http://localhost:8000")
+BACKEND_URL = "http://localhost:5000"
 
 @st.cache_resource
 def get_governorates():
@@ -98,7 +96,7 @@ st.markdown('<div class="sub-header">AI-Driven Decision Support System for Egypt
 st.sidebar.markdown("## 📊 Navigation")
 page = st.sidebar.radio(
     "Select a module:",
-    ["🏠 Dashboard", "🌡️ Weather & Environment", "🌱 Crop Recommendation", "📈 Yield Forecasting", "🩺 Plant Doctor (AI Diagnosis)", "📋 Report Generator"]
+    ["🏠 Dashboard", "🌡️ Weather & Environment", "🌱 Crop Recommendation", "📈 Yield Forecasting", "📋 Report Generator"]
 )
 
 # ============================================================================
@@ -571,58 +569,7 @@ elif page == "📈 Yield Forecasting":
             st.error(f"Error: {e}")
 
 # ============================================================================
-# PAGE 5: PLANT DOCTOR (AI DIAGNOSIS)
-# ============================================================================
-
-elif page == "🩺 Plant Doctor (AI Diagnosis)":
-    st.markdown("---")
-    st.markdown("### 🩺 Plant Doctor: AI Crop Disease Diagnosis")
-    st.write("Upload a photo of your crop leaf to identify diseases and get treatment recommendations.")
-    
-    st.markdown("---")
-    
-    uploaded_file = st.file_uploader("📸 Choose a leaf image...", type=["jpg", "jpeg", "png"])
-    
-    if uploaded_file is not None:
-        # Display the uploaded image
-        col1, col2 = st.columns([1, 1])
-        
-        with col1:
-            st.image(uploaded_file, caption="Uploaded Leaf Image", use_container_width=True)
-        
-        with col2:
-            st.info("🔄 Processing image with EfficientNetB0...")
-            
-            if st.button("🔍 Run AI Diagnosis"):
-                try:
-                    # Prepare the file for sending
-                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}
-                    
-                    # Call Plant Doctor API
-                    response = requests.post(f"{PLANT_DOCTOR_URL}/predict", files=files, timeout=20)
-                    
-                    if response.status_code == 200:
-                        result = response.json()
-                        
-                        # Display Results
-                        st.markdown(f"### 📋 Diagnosis: **{result['disease']}**")
-                        st.progress(float(result['confidence'].replace('%', '')) / 100)
-                        st.write(f"**Confidence Level:** {result['confidence']}")
-                        
-                        st.markdown("---")
-                        st.markdown("### 💊 Recommended Treatment")
-                        st.success(result['treatment'])
-                        
-                        # Visual feedback based on health
-                        if "Healthy" in result['disease']:
-                            st.balloons()
-                    else:
-                        st.error(f"Error from API: {response.text}")
-                except Exception as e:
-                    st.error(f"Could not connect to Plant Doctor API. Make sure the Docker container is running on port 8000. Error: {e}")
-
-# ============================================================================
-# PAGE 6: REPORT GENERATOR
+# PAGE 5: REPORT GENERATOR
 # ============================================================================
 
 elif page == "📋 Report Generator":

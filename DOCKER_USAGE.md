@@ -101,12 +101,6 @@ curl -X POST http://localhost:5000/api/recommend-crop \
 curl -X POST http://localhost:5000/api/forecast-yield \
   -H "Content-Type: application/json" \
   -d '{"crop": "Wheat", "year": 2026}'
-
-# 5.1 Plant Doctor API (Crop Disease Detection)
-# Test prediction with an image
-curl -X POST http://localhost:8000/predict \
-  -H "Content-Type: multipart/form-data" \
-  -F "file=@/path/to/your/leaf_image.jpg"
 ```
 
 ### 6. View Resource Usage

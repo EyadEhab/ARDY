@@ -1,9 +1,6 @@
-print("Starting script...")
-import sys
-import os
-print(f"Python: {sys.version}")
-print(f"CWD: {os.getcwd()}")
-print(f"Files: {os.listdir('.')}")
+"""
+Retrain ML models using real user datasets
+"""
 
 import pandas as pd
 import numpy as np
@@ -26,14 +23,9 @@ print("=" * 70)
 # ============================================================================
 print("\n[PHASE 1] Training Crop Recommendation Models...")
 
-try:
-    # Load crop recommendation dataset
-    crop_data = pd.read_csv('data/Crop_recommendation.csv')
-    print(f"✓ Loaded crop recommendation dataset: {crop_data.shape}")
-except Exception as e:
-    print(f"❌ Error loading Crop_recommendation.csv: {e}")
-    import sys
-    sys.exit(1)
+# Load crop recommendation dataset
+crop_data = pd.read_csv('data/Crop_recommendation.csv')
+print(f"✓ Loaded crop recommendation dataset: {crop_data.shape}")
 
 # Prepare features and labels
 X_crop = crop_data[['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']]
@@ -57,36 +49,28 @@ print(f"  Test set: {X_test.shape[0]} samples")
 
 # Train XGBoost
 print("\n  Training XGBoost classifier...")
-try:
-    xgb_model = XGBClassifier(
-        n_estimators=100,
-        max_depth=6,
-        learning_rate=0.1,
-        random_state=42,
-        verbosity=0
-    )
-    xgb_model.fit(X_train, y_train)
-    xgb_score = xgb_model.score(X_test, y_test)
-    print(f"  ✓ XGBoost Accuracy: {xgb_score:.4f}")
-except Exception as e:
-    print(f"❌ Error training XGBoost: {e}")
-    sys.exit(1)
+xgb_model = XGBClassifier(
+    n_estimators=100,
+    max_depth=6,
+    learning_rate=0.1,
+    random_state=42,
+    verbosity=0
+)
+xgb_model.fit(X_train, y_train)
+xgb_score = xgb_model.score(X_test, y_test)
+print(f"  ✓ XGBoost Accuracy: {xgb_score:.4f}")
 
 # Train Random Forest
 print("  Training Random Forest classifier...")
-try:
-    rf_model = RandomForestClassifier(
-        n_estimators=100,
-        max_depth=15,
-        random_state=42,
-        n_jobs=-1
-    )
-    rf_model.fit(X_train, y_train)
-    rf_score = rf_model.score(X_test, y_test)
-    print(f"  ✓ Random Forest Accuracy: {rf_score:.4f}")
-except Exception as e:
-    print(f"❌ Error training Random Forest: {rf_score:.4f}")
-    sys.exit(1)
+rf_model = RandomForestClassifier(
+    n_estimators=100,
+    max_depth=15,
+    random_state=42,
+    n_jobs=-1
+)
+rf_model.fit(X_train, y_train)
+rf_score = rf_model.score(X_test, y_test)
+print(f"  ✓ Random Forest Accuracy: {rf_score:.4f}")
 
 # Save crop models
 with open('models/xgb_crop_classifier.pkl', 'wb') as f:
