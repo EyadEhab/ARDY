@@ -60,6 +60,7 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_CLIENT_TOOLBAR_MODE=minimal
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-demo_key_for_testing}
+      - BACKEND_URL=http://egyptagri-backend:5000
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models:ro

@@ -125,10 +125,10 @@ def get_weather_data(governorate):
     
     return None
 
-def recommend_crop(n, p, k, ph):
+def recommend_crop(n, p, k, temperature, humidity, ph, rainfall):
     """Get crop recommendation using ensemble of XGBoost and Random Forest"""
     try:
-        X = np.array([[n, p, k, ph]])
+        X = np.array([[n, p, k, temperature, humidity, ph, rainfall]])
         
         # Get predictions from both models
         xgb_pred = xgb_clf.predict(X)[0]
@@ -194,12 +194,12 @@ def forecast_yield(crop, year=2026):
         print(f"Error in yield forecasting: {e}")
         return None
 
-def generate_shap_explanation(n, p, k, ph):
+def generate_shap_explanation(n, p, k, temperature, humidity, ph, rainfall):
     """Generate SHAP explanation for crop recommendation"""
     try:
-        X = np.array([[n, p, k, ph]])
-        feature_names = ['N (mg/kg)', 'P (mg/kg)', 'K (mg/kg)', 'pH']
-        feature_values = [n, p, k, ph]
+        X = np.array([[n, p, k, temperature, humidity, ph, rainfall]])
+        feature_names = ['N (mg/kg)', 'P (mg/kg)', 'K (mg/kg)', 'Temperature (°C)', 'Humidity (%)', 'pH', 'Rainfall (mm)']
+        feature_values = [n, p, k, temperature, humidity, ph, rainfall]
         
         # Get model predictions to understand confidence
         xgb_proba = xgb_clf.predict_proba(X)[0]
@@ -219,8 +219,14 @@ def generate_shap_explanation(n, p, k, ph):
                 norm_val = feature_val / 50.0
             elif i == 2:  # K
                 norm_val = feature_val / 300.0
-            else:  # pH
+            elif i == 3:  # Temperature
+                norm_val = feature_val / 40.0
+            elif i == 4:  # Humidity
+                norm_val = feature_val / 100.0
+            elif i == 5:  # pH
                 norm_val = (feature_val - 4.0) / 5.0
+            else:  # Rainfall
+                norm_val = feature_val / 300.0
             
             # Estimate importance
             importance = (norm_val - 0.5) * 0.3  # Scale to reasonable range
@@ -277,13 +283,16 @@ def recommend():
         n = float(data.get('n', 50))
         p = float(data.get('p', 25))
         k = float(data.get('k', 150))
+        temperature = float(data.get('temperature', 25.6))
+        humidity = float(data.get('humidity', 71.5))
         ph = float(data.get('ph', 7.0))
+        rainfall = float(data.get('rainfall', 103.5))
         
         # Validate ranges
         if not (0 <= n <= 200 and 0 <= p <= 100 and 0 <= k <= 500 and 4 <= ph <= 9):
             return jsonify({'error': 'Invalid soil property values'}), 400
         
-        recommendation = recommend_crop(n, p, k, ph)
+        recommendation = recommend_crop(n, p, k, temperature, humidity, ph, rainfall)
         if recommendation:
             return jsonify(recommendation)
         return jsonify({'error': 'Error generating recommendation'}), 500
@@ -316,9 +325,12 @@ def shap_explanation():
         n = float(data.get('n', 50))
         p = float(data.get('p', 25))
         k = float(data.get('k', 150))
+        temperature = float(data.get('temperature', 25.6))
+        humidity = float(data.get('humidity', 71.5))
         ph = float(data.get('ph', 7.0))
+        rainfall = float(data.get('rainfall', 103.5))
         
-        explanation = generate_shap_explanation(n, p, k, ph)
+        explanation = generate_shap_explanation(n, p, k, temperature, humidity, ph, rainfall)
         if explanation:
             return jsonify(explanation)
         return jsonify({'error': 'Error generating explanation'}), 500
@@ -338,7 +350,12 @@ def generate_report():
         
         # Get all data
         weather = get_weather_data(governorate)
-        recommendation = recommend_crop(n, p, k, ph)
+        temperature = weather.get('temperature', 25.6) if weather else 25.6
+        humidity = weather.get('humidity', 71.5) if weather else 71.5
+        rainfall = weather.get('rainfall', 103.5) if weather else 103.5
+        recommendation = recommend_crop(n, p, k, temperature, humidity, ph, rainfall)
+        if not recommendation:
+            return jsonify({'error': 'Error generating crop recommendation'}), 500
         forecast_data = forecast_yield(recommendation['crop'], 2026)
         
         # Create PDF

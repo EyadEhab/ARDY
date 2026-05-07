@@ -15,7 +15,11 @@ from datetime import datetime
 import requests
 import json
 import os
+import csv
+from io import StringIO
 from dotenv import load_dotenv
+
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
 
 # Load environment variables from .env file
 load_dotenv()
@@ -528,7 +532,7 @@ elif st.session_state.current_step == 2:
         
         data_summary = pd.DataFrame({
             'Parameter': ['Nitrogen (N)', 'Phosphorus (P)', 'Potassium (K)', 'pH'],
-            'Value': [n, p, k, f'{ph:.2f}'],
+            'Value': [f'{n}', f'{p}', f'{k}', f'{ph:.2f}'],
             'Unit': ['mg/kg', 'mg/kg', 'mg/kg', '-']
         })
         
@@ -779,11 +783,75 @@ elif st.session_state.current_step == 4:
     
     with col1:
         if st.button("📄 Generate PDF Report", use_container_width=True, key='generate_pdf'):
-            st.info("📄 PDF generation feature coming soon!")
+            with st.spinner("Generating PDF report..."):
+                try:
+                    response = requests.post(
+                        f"{BACKEND_URL}/api/generate-report",
+                        json={
+                            'governorate': st.session_state.wizard_data['governorate'],
+                            'n': st.session_state.wizard_data['n'],
+                            'p': st.session_state.wizard_data['p'],
+                            'k': st.session_state.wizard_data['k'],
+                            'ph': st.session_state.wizard_data['ph']
+                        },
+                        timeout=15
+                    )
+                    if response.status_code == 200:
+                        st.success("✅ Report generated successfully!")
+                        st.download_button(
+                            label="📥 Download PDF Report",
+                            data=response.content,
+                            file_name=f"egyptagri_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                            mime="application/pdf",
+                            key='download_pdf'
+                        )
+                    else:
+                        st.error("Error generating PDF report. Please try again.")
+                except Exception as e:
+                    st.error(f"Could not connect to backend server. Error: {e}")
     
     with col2:
         if st.button("📊 Download Data as CSV", use_container_width=True, key='download_csv'):
-            st.info("📊 CSV export feature coming soon!")
+            csv_buffer = StringIO()
+            writer = csv.writer(csv_buffer)
+            
+            writer.writerow(['Section', 'Parameter', 'Value'])
+            wd = st.session_state.wizard_data
+            writer.writerow(['Location', 'Governorate', wd['governorate']])
+            
+            if wd.get('weather'):
+                writer.writerow(['Weather', 'Temperature', f"{wd['weather']['temperature']:.1f} °C"])
+                writer.writerow(['Weather', 'Humidity', f"{wd['weather']['humidity']:.1f} %"])
+                writer.writerow(['Weather', 'Rainfall', f"{wd['weather']['rainfall']:.1f} mm"])
+            
+            writer.writerow(['Soil', 'Nitrogen (N)', f"{wd['n']} mg/kg"])
+            writer.writerow(['Soil', 'Phosphorus (P)', f"{wd['p']} mg/kg"])
+            writer.writerow(['Soil', 'Potassium (K)', f"{wd['k']} mg/kg"])
+            writer.writerow(['Soil', 'pH', f"{wd['ph']:.2f}"])
+            
+            feddan = wd.get('feddan', 1.0)
+            hectares = feddan * 0.42
+            writer.writerow(['Land', 'Area (Feddan)', f"{feddan:.1f}"])
+            writer.writerow(['Land', 'Area (Hectares)', f"{hectares:.2f}"])
+            
+            if wd.get('crop_predictions'):
+                for i, pred in enumerate(wd['crop_predictions']):
+                    yield_pred = predict_yield(pred['crop'])
+                    if yield_pred:
+                        writer.writerow(['Crop', f"Crop #{i+1}", pred['crop']])
+                        writer.writerow(['Crop', f"Confidence #{i+1}", f"{pred['confidence']*100:.1f}%"])
+                        writer.writerow(['Crop', f"Yield #{i+1}", f"{yield_pred['predicted_yield']:.0f} Tonnes/Ha"])
+                        writer.writerow(['Crop', f"Total Production #{i+1}", f"{yield_pred['predicted_yield'] * hectares:.1f} Tons"])
+            
+            csv_data = csv_buffer.getvalue()
+            
+            st.download_button(
+                label="📥 Download CSV Data",
+                data=csv_data,
+                file_name=f"egyptagri_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                key='download_csv_btn'
+            )
     
     st.divider()
     
