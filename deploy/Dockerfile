@@ -44,6 +44,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 # Security: Create a non-root user
 RUN useradd -m appuser && chown -R appuser /app
+# Ensure models directory exists and is owned by appuser
+RUN mkdir -p /app/models && chown -R appuser /app/models
 USER appuser
 
 # Environment Variables for Performance & Security

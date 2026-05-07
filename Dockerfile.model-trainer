@@ -6,33 +6,20 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
     gcc \
-    libgomp1 \
-    libgl1 \
-    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements
 COPY requirements.txt .
 
-# Install Python dependencies and upgrade pip
-RUN pip install --no-cache-dir --upgrade pip
+# Install Python dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Install heavy requirements separately with a retry loop for unstable networks
-RUN for i in 1 2 3 4 5; do \
-    pip install --no-cache-dir --default-timeout=1000 tensorflow-cpu Pillow && break || \
-    (echo "Retry $i failed, waiting 30s..." && sleep 30); \
-    done
-
-RUN for i in 1 2 3 4 5; do \
-    pip install --no-cache-dir --default-timeout=1000 -r requirements.txt && break || \
-    (echo "Retry $i failed, waiting 30s..." && sleep 30); \
-    done
-
-# Copy all files (respecting .dockerignore)
-COPY . .
+# Copy scripts and data
+COPY retrain_models.py .
+COPY data/ ./data/
 
 # Create models directory
 RUN mkdir -p /app/models
 
-# Run model training (Sequential) with verbose output and exit with error code on failure
-CMD ["sh", "-c", "python -u retrain_models.py && python -u train_disease_model.py || (echo 'Training failed!' && exit 1)"]
+# Run model training
+CMD ["python", "retrain_models.py"]

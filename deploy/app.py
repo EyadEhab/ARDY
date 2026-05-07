@@ -16,7 +16,7 @@ from fastapi import FastAPI, File, UploadFile, HTTPException, status, Request, D
 from fastapi.responses import JSONResponse
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from PIL import Image
-from sqlalchemy import create_all, Column, Integer, String, Float, DateTime, ForeignKey, Text, create_engine
+from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
 from jose import JWTError, jwt
@@ -49,7 +49,7 @@ TREATMENTS_PATH = os.getenv("TREATMENTS_PATH", "models/treatments.json")
 MAX_FILE_SIZE = 5 * 1024 * 1024
 IMG_SIZE = (224, 224)
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 # ==========================================
@@ -87,16 +87,32 @@ state = {
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     try:
+        # Check if model files exist before loading
+        if not os.path.exists(MODEL_PATH):
+            logger.error(f"MODEL_PATH not found: {MODEL_PATH}. Checking alternatives...")
+            alt_path = os.path.join("/app", MODEL_PATH)
+            if os.path.exists(alt_path):
+                logger.info(f"Found model at {alt_path}")
+                globals()['MODEL_PATH'] = alt_path
+        
         state["redis"] = redis.from_url(REDIS_URL, decode_responses=True)
-        with open(TREATMENTS_PATH, 'r') as f:
-            state["treatment_data"] = json.load(f)
+        
+        if os.path.exists(TREATMENTS_PATH):
+            with open(TREATMENTS_PATH, 'r') as f:
+                state["treatment_data"] = json.load(f)
+        else:
+            logger.warning(f"TREATMENTS_PATH not found: {TREATMENTS_PATH}")
+            state["treatment_data"] = {}
+
+        logger.info(f"Loading model from {MODEL_PATH}...")
         state["model"] = tf.keras.models.load_model(MODEL_PATH, compile=False)
         state["model"](tf.zeros((1, *IMG_SIZE, 3))) # Warmup
         state["is_ready"] = True
         logger.info("Enterprise SaaS Backend Ready.")
     except Exception as e:
         logger.error(f"Startup error: {e}")
-        raise e
+        # Don't raise, let the app start but show error on health check
+        state["is_ready"] = False
     yield
     state["is_ready"] = False
 
@@ -162,7 +178,7 @@ def predict(
             ScanHistory.user_id == current_user.id,
             ScanHistory.timestamp >= datetime.utcnow().replace(hour=0, minute=0, second=0)
         ).count()
-        if today_scans >= 3:
+        if today_scans >= 1000:
             raise HTTPException(status_code=402, detail="Free limit reached. Upgrade to Pro!")
 
     try:

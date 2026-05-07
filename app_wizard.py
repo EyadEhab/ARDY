@@ -374,6 +374,12 @@ def create_yield_chart(crop_predictions):
 # SESSION STATE MANAGEMENT
 # ============================================================================
 
+# ============================================================================ 
+# PLANT DOCTOR SESSION STATE 
+# ============================================================================ 
+if 'show_plant_doctor' not in st.session_state: 
+    st.session_state.show_plant_doctor = False 
+
 if 'current_step' not in st.session_state:
     st.session_state.current_step = 1
 
@@ -402,6 +408,145 @@ st.markdown("""
         </p>
     </div>
 """, unsafe_allow_html=True)
+
+# ============================================================================ 
+# PLANT DOCTOR BUTTON 
+# ============================================================================ 
+pd_col1, pd_col2, pd_col3 = st.columns([3, 2, 3]) 
+with pd_col2: 
+    if st.button("🩺 Plant Doctor", use_container_width=True, key='plant_doctor_btn', 
+                 help="Diagnose plant diseases from leaf images"): 
+        st.session_state.show_plant_doctor = not st.session_state.show_plant_doctor 
+        st.rerun() 
+
+# ============================================================================ 
+# PLANT DOCTOR PAGE 
+# ============================================================================ 
+if st.session_state.show_plant_doctor: 
+    st.markdown(""" 
+        <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
+                    border: 2px solid #2ecc71; border-radius: 15px; 
+                    padding: 30px; margin-bottom: 20px;'> 
+            <h2 style='color: #2ecc71; text-align: center; margin: 0;'> 
+                🩺 Plant Doctor AI 
+            </h2> 
+            <p style='color: #7f8c8d; text-align: center; margin: 5px 0 0 0;'> 
+                Upload a leaf image for instant disease diagnosis 
+            </p> 
+        </div> 
+    """, unsafe_allow_html=True) 
+
+    uploaded_file = st.file_uploader( 
+        "📸 Choose a leaf image...", 
+        type=['jpg', 'jpeg', 'png'], 
+        key='plant_doctor_upload' 
+    ) 
+
+    if uploaded_file is not None: 
+        col_img, col_result = st.columns([1, 1]) 
+
+        with col_img: 
+            st.image(uploaded_file, caption="Uploaded Leaf Image", use_container_width=True) 
+
+        with col_result: 
+            with st.spinner("🔄 Processing image with EfficientNetB0..."): 
+                try: 
+                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)} 
+                    headers = {} 
+
+                    # Get JWT token if exists 
+                    if 'plant_doctor_token' in st.session_state and st.session_state.plant_doctor_token: 
+                        headers["Authorization"] = f"Bearer {st.session_state.plant_doctor_token}" 
+
+                    response = requests.post( 
+                        "http://plant-doctor-api:8000/predict", 
+                        files=files, 
+                        headers=headers, 
+                        timeout=30 
+                    ) 
+
+                    if response.status_code == 200: 
+                        result = response.json() 
+                        disease = result.get('disease', 'Unknown') 
+                        conf_raw = result.get('confidence', 0) 
+                        confidence = float(str(conf_raw).replace('%', '')) / (100 if '%' in str(conf_raw) else 1) 
+                        treatment = result.get('treatment', {}) 
+
+                        # Confidence color 
+                        conf_color = "#27ae60" if confidence > 0.8 else "#f39c12" if confidence > 0.5 else "#e74c3c" 
+
+                        st.markdown(f""" 
+                            <div style='background: #1a1a2e; border: 2px solid {conf_color}; 
+                                        border-radius: 10px; padding: 20px; margin-bottom: 15px;'> 
+                                <h3 style='color: {conf_color}; margin: 0;'>🔬 Diagnosis Result</h3> 
+                                <hr style='border-color: {conf_color}; opacity: 0.3;'> 
+                                <p style='color: white; font-size: 1.3rem; margin: 10px 0;'> 
+                                    <b>Disease:</b> {disease} 
+                                </p> 
+                                <p style='color: {conf_color}; font-size: 1.1rem; margin: 5px 0;'> 
+                                    <b>Confidence:</b> {confidence*100:.1f}% 
+                                </p> 
+                            </div> 
+                        """, unsafe_allow_html=True) 
+
+                        if treatment: 
+                            st.markdown("### 💊 Treatment Plan") 
+                            if isinstance(treatment, dict): 
+                                for key, value in treatment.items(): 
+                                    st.write(f"**{key}:** {value}") 
+                            else: 
+                                st.write(treatment) 
+
+                    elif response.status_code == 401: 
+                        st.warning("⚠️ Login required to use Plant Doctor") 
+                        st.info("Please login below to access full diagnosis features") 
+
+                    else: 
+                        st.error(f"❌ API Error: {response.status_code}") 
+                        st.code(response.text) 
+
+                except requests.exceptions.ConnectionError: 
+                    st.error("❌ Could not connect to Plant Doctor API on port 8000") 
+                except Exception as e: 
+                    st.error(f"❌ Error: {str(e)}") 
+
+    # Login section (collapsible) 
+    with st.expander("🔐 Login to Plant Doctor (optional)", expanded=False): 
+        if 'plant_doctor_token' not in st.session_state: 
+            st.session_state.plant_doctor_token = None 
+
+        login_col1, login_col2 = st.columns(2) 
+        with login_col1: 
+            pd_username = st.text_input("Username", key='pd_username') 
+            pd_password = st.text_input("Password", type="password", key='pd_password') 
+
+        with login_col2: 
+            st.write("") 
+            st.write("") 
+            if st.button("🔑 Login", key='pd_login', use_container_width=True): 
+                try: 
+                    login_response = requests.post( 
+                        "http://plant-doctor-api:8000/token", 
+                        data={"username": pd_username, "password": pd_password}, 
+                        timeout=10 
+                    ) 
+                    if login_response.status_code == 200: 
+                        st.session_state.plant_doctor_token = login_response.json().get('access_token') 
+                        st.success("✅ Logged in successfully!") 
+                        st.rerun() 
+                    else: 
+                        st.error("❌ Invalid credentials") 
+                except Exception as e: 
+                    st.error(f"❌ Login failed: {str(e)}") 
+
+        if st.session_state.plant_doctor_token: 
+            st.success("✅ Currently logged in") 
+            if st.button("🚪 Logout", key='pd_logout'): 
+                st.session_state.plant_doctor_token = None 
+                st.rerun() 
+
+    st.divider() 
+    st.stop()
 
 # Step indicator
 col1, col2, col3, col4 = st.columns(4)

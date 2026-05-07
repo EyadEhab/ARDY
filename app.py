@@ -364,12 +364,12 @@ elif page == "🌱 Crop Recommendation":
                     st.markdown(f"""
                     <div class="success-box">
                         <h2>🌾 {result['crop']}</h2>
-                        <p><b>Confidence Score:</b> {result['confidence']:.1%}</p>
+                        <p><b>Confidence Score:</b> {result['confidence']}</p>
                     </div>
                     """, unsafe_allow_html=True)
                 
                 with col2:
-                    st.metric("Model Confidence", f"{result['confidence']:.1%}")
+                    st.metric("Model Confidence", f"{result['confidence']}")
                 
                 st.markdown("---")
                 st.markdown("### 🏆 Top 5 Alternative Crops")
@@ -606,7 +606,9 @@ elif page == "🩺 Plant Doctor (AI Diagnosis)":
                         
                         # Display Results
                         st.markdown(f"### 📋 Diagnosis: **{result['disease']}**")
-                        st.progress(float(result['confidence'].replace('%', '')) / 100)
+                        conf_val = result['confidence'] 
+                        conf_float = float(str(conf_val).replace('%', '')) / (100 if '%' in str(conf_val) else 1) 
+                        st.progress(min(conf_float, 1.0))
                         st.write(f"**Confidence Level:** {result['confidence']}")
                         
                         st.markdown("---")
