@@ -318,16 +318,21 @@ def predict_yield(crop, year=2026):
     model_data = yield_models[mapped_crop]
     model = model_data['model']
     
-    # Predict yield
-    predicted_yield = model.predict([[year]])[0]
+    # Normalize year (model trained on normalized years)
+    year_min = model_data['min_year']
+    year_max = model_data['max_year']
+    year_norm = (year - year_min) / (year_max - year_min)
+    
+    # Predict yield (kg/ha) and convert to tonnes/ha
+    predicted_yield = model.predict([[year_norm]])[0] / 1000.0
     
     return {
         'crop': crop,
         'year': year,
         'predicted_yield': predicted_yield,
         'r2_score': model_data['r2_score'],
-        'avg_yield': model_data['avg_yield'],
-        'latest_yield': model_data['latest_yield'],
+        'avg_yield': model_data['avg_yield'] / 1000.0,
+        'latest_yield': model_data['latest_yield'] / 1000.0,
         'min_year': model_data['min_year'],
         'max_year': model_data['max_year']
     }

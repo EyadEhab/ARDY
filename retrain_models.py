@@ -122,25 +122,31 @@ for crop in crops_to_train:
     X_yield = crop_yield[['Year']].values
     y_yield = crop_yield['Yield'].values
     
+    # Normalize year to avoid large coefficients
+    year_min = X_yield.min()
+    year_max = X_yield.max()
+    X_yield_norm = (X_yield - year_min) / (year_max - year_min)
+    
     # Train linear regression
     model = LinearRegression()
-    model.fit(X_yield, y_yield)
+    model.fit(X_yield_norm, y_yield)
     
     # Calculate R² score
-    r2_score = model.score(X_yield, y_yield)
+    r2_score = model.score(X_yield_norm, y_yield)
     
     # Store model and stats
     yield_models[crop] = {
         'model': model,
         'r2_score': r2_score,
-        'min_year': int(crop_yield['Year'].min()),
-        'max_year': int(crop_yield['Year'].max()),
+        'min_year': int(year_min),
+        'max_year': int(year_max),
         'avg_yield': float(y_yield.mean()),
         'latest_yield': float(y_yield[-1])
     }
     
-    # Predict 2026 yield
-    pred_2026 = model.predict([[2026]])[0]
+    # Predict 2026 yield (in kg/ha)
+    year_2026_norm = (2026 - year_min) / (year_max - year_min)
+    pred_2026 = model.predict([[year_2026_norm]])[0]
     
     print(f"  ✓ {crop:30s} | R²: {r2_score:.4f} | 2026 Pred: {pred_2026:.2f} tonnes/ha")
 
