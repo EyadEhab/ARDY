@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 FROM python:3.11-slim
 
 # Set working directory
@@ -8,11 +9,20 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install only the model training dependencies with pip cache and retries
+RUN --mount=type=cache,target=/root/.cache/pip \
+    attempts=0; \
+    until [ $attempts -ge 5 ]; do \
+        pip install --default-timeout=1000 \
+            numpy==2.4.4 \
+            pandas==3.0.2 \
+            scikit-learn==1.8.0 \
+            xgboost==3.2.0 && break; \
+        attempts=$((attempts + 1)); \
+        echo "pip install failed, retrying in 15s... ($attempts/5)"; \
+        sleep 15; \
+    done; \
+    [ $attempts -lt 5 ]
 
 # Copy scripts and data
 COPY retrain_models.py .
@@ -22,4 +32,4 @@ COPY data/ ./data/
 RUN mkdir -p /app/models
 
 # Run model training
-CMD ["python", "retrain_models.py"]
+CMD ["sh", "-c", "sleep 2 && if [ -f /app/models/crop_model.h5 ]; then echo 'Model exists, skipping...'; else python retrain_models.py; fi"]

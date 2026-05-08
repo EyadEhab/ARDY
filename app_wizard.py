@@ -454,10 +454,6 @@ if st.session_state.show_plant_doctor:
                     files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)} 
                     headers = {} 
 
-                    # Get JWT token if exists 
-                    if 'plant_doctor_token' in st.session_state and st.session_state.plant_doctor_token: 
-                        headers["Authorization"] = f"Bearer {st.session_state.plant_doctor_token}" 
-
                     response = requests.post( 
                         "http://plant-doctor-api:8000/predict", 
                         files=files, 
@@ -498,8 +494,8 @@ if st.session_state.show_plant_doctor:
                                 st.write(treatment) 
 
                     elif response.status_code == 401: 
-                        st.warning("⚠️ Login required to use Plant Doctor") 
-                        st.info("Please login below to access full diagnosis features") 
+                        st.error("❌ Plant Doctor API rejected the request unexpectedly.") 
+                        st.info("The API should allow direct access now. Please refresh after rebuilding the API service.") 
 
                     else: 
                         st.error(f"❌ API Error: {response.status_code}") 
@@ -511,41 +507,10 @@ if st.session_state.show_plant_doctor:
                     st.error(f"❌ Error: {str(e)}") 
 
     # Login section (collapsible) 
-    with st.expander("🔐 Login to Plant Doctor (optional)", expanded=False): 
-        if 'plant_doctor_token' not in st.session_state: 
-            st.session_state.plant_doctor_token = None 
-
-        login_col1, login_col2 = st.columns(2) 
-        with login_col1: 
-            pd_username = st.text_input("Username", key='pd_username') 
-            pd_password = st.text_input("Password", type="password", key='pd_password') 
-
-        with login_col2: 
-            st.write("") 
-            st.write("") 
-            if st.button("🔑 Login", key='pd_login', use_container_width=True): 
-                try: 
-                    login_response = requests.post( 
-                        "http://plant-doctor-api:8000/token", 
-                        data={"username": pd_username, "password": pd_password}, 
-                        timeout=10 
-                    ) 
-                    if login_response.status_code == 200: 
-                        st.session_state.plant_doctor_token = login_response.json().get('access_token') 
-                        st.success("✅ Logged in successfully!") 
-                        st.rerun() 
-                    else: 
-                        st.error("❌ Invalid credentials") 
-                except Exception as e: 
-                    st.error(f"❌ Login failed: {str(e)}") 
-
-        if st.session_state.plant_doctor_token: 
-            st.success("✅ Currently logged in") 
-            if st.button("🚪 Logout", key='pd_logout'): 
-                st.session_state.plant_doctor_token = None 
-                st.rerun() 
-
     st.divider() 
+    if st.button("⬅️ Back to Wizard", use_container_width=True): 
+        st.session_state.show_plant_doctor = False 
+        st.rerun()
     st.stop()
 
 # Step indicator

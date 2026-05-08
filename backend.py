@@ -15,7 +15,6 @@ import pickle
 import pandas as pd
 import numpy as np
 import requests
-import shap
 import os
 from datetime import datetime
 from io import BytesIO

@@ -166,20 +166,9 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 
 @app.post("/predict")
 def predict(
-    file: UploadFile = File(...), 
-    current_user: User = Depends(get_current_user),
-    db: Session = Depends(get_db)
+    file: UploadFile = File(...)
 ):
     if not state["is_ready"]: raise HTTPException(status_code=503)
-    
-    # 1. SaaS Tier Limit (MVP Logic)
-    if current_user.tier == "Free":
-        today_scans = db.query(ScanHistory).filter(
-            ScanHistory.user_id == current_user.id,
-            ScanHistory.timestamp >= datetime.utcnow().replace(hour=0, minute=0, second=0)
-        ).count()
-        if today_scans >= 1000:
-            raise HTTPException(status_code=402, detail="Free limit reached. Upgrade to Pro!")
 
     try:
         contents = file.file.read(MAX_FILE_SIZE + 1)
@@ -204,16 +193,6 @@ def predict(
             result = {"disease": name, "confidence": f"{conf*100:.2f}%", "treatment": treat}
             state["redis"].setex(cache_key, 3600, json.dumps(result))
 
-        # 2. Save to History
-        history = ScanHistory(
-            user_id=current_user.id, 
-            disease=result["disease"], 
-            confidence=float(result["confidence"].replace('%','')), 
-            treatment=result["treatment"]
-        )
-        db.add(history)
-        db.commit()
-        
         return result
     except Exception as e:
         logger.error(f"Predict error: {e}")

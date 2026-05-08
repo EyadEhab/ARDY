@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1.7
 # Use Python slim image for a smaller footprint
 FROM python:3.11-slim as builder
 
@@ -17,11 +18,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Install dependencies with a retry loop for unstable networks
+# Install dependencies with a retry loop and pip cache preserved across builds
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip && \
+RUN --mount=type=cache,target=/root/.cache/pip \
+    pip install --upgrade pip && \
     for i in 1 2 3 4 5; do \
-    pip install --no-cache-dir --default-timeout=1000 -r requirements.txt && break || \
+    pip install --default-timeout=1000 -r requirements.txt && break || \
     (echo "Retry $i failed, waiting 30s..." && sleep 30); \
     done
 
