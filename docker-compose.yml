@@ -116,9 +116,9 @@ services:
     volumes:
       - ./models:/app/models:ro
     depends_on:
-  ardy-db:
+      ardy-db:
         condition: service_healthy
-  ardy-redis:
+      ardy-redis:
         condition: service_healthy
     networks:
       - ardy-network
