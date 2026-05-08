@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Generate synthetic datasets for EgyptAgri-Pulse ML models.
+Generate synthetic datasets for ARDY Smart Agriculture ML models.
 This script creates:
 1. Soil chemistry dataset (N, P, K, pH) with crop recommendations
 2. FAO yield time-series data for Egypt (1990-2024)

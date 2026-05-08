@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Train ML models for EgyptAgri-Pulse:
+Train ML models for ARDY Smart Agriculture:
 1. Crop Recommendation Classifier (XGBoost + Random Forest ensemble)
 2. Yield Forecasting Regressor (Time-series regression)
 """
@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 os.makedirs('models', exist_ok=True)
 
 print("="*60)
-print("TRAINING ML MODELS FOR EGYPTAGRI-PULSE")
+print("TRAINING ML MODELS FOR ARDY SMART AGRICULTURE")
 print("="*60)
 
 # ============================================================================

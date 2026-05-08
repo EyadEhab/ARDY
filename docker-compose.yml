@@ -4,12 +4,12 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.model-trainer
-    container_name: egyptagri-model-trainer
+    container_name: ardy-model-trainer
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models
     networks:
-      - egyptagri-network
+      - ardy-network
     restart: "no"
     healthcheck:
       test: ["CMD", "test", "-f", "/app/models/xgb_crop_classifier.pkl"]
@@ -23,7 +23,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.backend
-    container_name: egyptagri-backend
+    container_name: ardy-backend
     ports:
       - "5000:5000"
     environment:
@@ -34,7 +34,7 @@ services:
       - ./data:/app/data:ro
       - ./models:/app/models:ro
     networks:
-      - egyptagri-network
+      - ardy-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
       interval: 30s
@@ -51,7 +51,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.frontend
-    container_name: egyptagri-frontend
+    container_name: ardy-frontend
     ports:
       - "8501:8501"
     environment:
@@ -60,20 +60,20 @@ services:
       - STREAMLIT_SERVER_HEADLESS=true
       - STREAMLIT_CLIENT_TOOLBAR_MODE=minimal
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-demo_key_for_testing}
-      - BACKEND_URL=http://egyptagri-backend:5000
+      - BACKEND_URL=http://ardy-backend:5000
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models:ro
     networks:
-      - egyptagri-network
+      - ardy-network
     depends_on:
       backend:
         condition: service_healthy
     restart: unless-stopped
 
-  egyptagri-db:
+  ardy-db:
     image: postgres:15-alpine
-    container_name: egyptagri-db
+    container_name: ardy-db
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=plant_doctor_secure
@@ -81,7 +81,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
-      - egyptagri-network
+      - ardy-network
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U admin -d plant_doctor_db"]
       interval: 10s
@@ -89,11 +89,11 @@ services:
       retries: 5
     restart: unless-stopped
 
-  egyptagri-redis:
+  ardy-redis:
     image: redis:7-alpine
-    container_name: egyptagri-redis
+    container_name: ardy-redis
     networks:
-      - egyptagri-network
+      - ardy-network
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -109,23 +109,23 @@ services:
     ports:
       - "8000:8000"
     environment:
-      - DATABASE_URL=${DATABASE_URL:-postgresql://admin:plant_doctor_secure@egyptagri-db:5432/plant_doctor_db}
-      - REDIS_URL=${REDIS_URL:-redis://egyptagri-redis:6379/0}
+      - DATABASE_URL=${DATABASE_URL:-postgresql://admin:plant_doctor_secure@ardy-db:5432/plant_doctor_db}
+      - REDIS_URL=${REDIS_URL:-redis://ardy-redis:6379/0}
       - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-for-plant-doctor-saas}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
     volumes:
       - ./models:/app/models:ro
     depends_on:
-      egyptagri-db:
+  ardy-db:
         condition: service_healthy
-      egyptagri-redis:
+  ardy-redis:
         condition: service_healthy
     networks:
-      - egyptagri-network
+      - ardy-network
     restart: unless-stopped
 
 networks:
-  egyptagri-network:
+  ardy-network:
     driver: bridge
 
 volumes:

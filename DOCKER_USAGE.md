@@ -1,4 +1,4 @@
-# Docker Usage Guide for EgyptAgri-Pulse
+# Docker Usage Guide for ARDY Smart Agriculture
 
 ## Quick Reference
 
@@ -25,7 +25,7 @@ docker-compose logs -f
 
 ```bash
 # Navigate to project
-cd egypt-agri-pulse
+cd ardy-smart-agriculture
 
 # Build and start all services
 docker-compose up --build
@@ -110,7 +110,7 @@ curl -X POST http://localhost:5000/api/forecast-yield \
 docker stats
 
 # Specific container
-docker stats egyptagri-backend
+docker stats ardy-backend
 
 # Memory usage
 docker stats --no-stream
@@ -139,7 +139,7 @@ docker-compose down
 docker-compose down -v
 
 # Remove images
-docker image rm egyptagri-pulse_backend egyptagri-pulse_frontend
+docker image rm ardy-pulse_backend ardy-pulse_frontend
 
 # Remove all unused images
 docker image prune -a
@@ -214,7 +214,7 @@ docker volume ls
 docker-compose exec backend ls -la /app/data
 
 # Inspect volume
-docker volume inspect egypt-agri-pulse_data
+docker volume inspect ardy-smart-agriculture_data
 ```
 
 ---
@@ -347,13 +347,13 @@ services:
 docker swarm init
 
 # Deploy stack
-docker stack deploy -c docker-compose.yml egyptagri
+docker stack deploy -c docker-compose.yml ardy
 
 # View services
 docker service ls
 
 # Scale service
-docker service scale egyptagri_backend=3
+docker service scale ardy_backend=3
 ```
 
 ### Using Kubernetes
@@ -373,13 +373,13 @@ kubectl get pods
 
 ```bash
 # Tag image
-docker tag egyptagri-pulse_backend myregistry/egyptagri-backend:1.0.0
+docker tag ardy-pulse_backend myregistry/ardy-backend:1.0.0
 
 # Push to registry
-docker push myregistry/egyptagri-backend:1.0.0
+docker push myregistry/ardy-backend:1.0.0
 
 # Pull from registry
-docker pull myregistry/egyptagri-backend:1.0.0
+docker pull myregistry/ardy-backend:1.0.0
 ```
 
 ---
@@ -403,13 +403,13 @@ docker-compose logs -f --timestamps backend
 
 ```bash
 # Get container info
-docker inspect egyptagri-backend
+docker inspect ardy-backend
 
 # Get IP address
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' egyptagri-backend
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ardy-backend
 
 # Get environment variables
-docker inspect -f '{{.Config.Env}}' egyptagri-backend
+docker inspect -f '{{.Config.Env}}' ardy-backend
 ```
 
 ### Health Check Status
@@ -419,7 +419,7 @@ docker inspect -f '{{.Config.Env}}' egyptagri-backend
 docker-compose ps
 
 # Manual health check
-docker exec egyptagri-backend curl http://localhost:5000/api/health
+docker exec ardy-backend curl http://localhost:5000/api/health
 ```
 
 ---
@@ -430,11 +430,11 @@ docker exec egyptagri-backend curl http://localhost:5000/api/health
 
 ```bash
 # Backup data volume
-docker run --rm -v egypt-agri-pulse_data:/data -v $(pwd):/backup \
+docker run --rm -v ardy-smart-agriculture_data:/data -v $(pwd):/backup \
   busybox tar czf /backup/data-backup.tar.gz -C /data .
 
 # Backup models volume
-docker run --rm -v egypt-agri-pulse_models:/models -v $(pwd):/backup \
+docker run --rm -v ardy-smart-agriculture_models:/models -v $(pwd):/backup \
   busybox tar czf /backup/models-backup.tar.gz -C /models .
 ```
 
@@ -442,11 +442,11 @@ docker run --rm -v egypt-agri-pulse_models:/models -v $(pwd):/backup \
 
 ```bash
 # Restore data
-docker run --rm -v egypt-agri-pulse_data:/data -v $(pwd):/backup \
+docker run --rm -v ardy-smart-agriculture_data:/data -v $(pwd):/backup \
   busybox tar xzf /backup/data-backup.tar.gz -C /data
 
 # Restore models
-docker run --rm -v egypt-agri-pulse_models:/models -v $(pwd):/backup \
+docker run --rm -v ardy-smart-agriculture_models:/models -v $(pwd):/backup \
   busybox tar xzf /backup/models-backup.tar.gz -C /models
 ```
 
@@ -522,13 +522,13 @@ docker-compose exec backend bash
 ### Copy Files from Container
 
 ```bash
-docker cp egyptagri-backend:/app/data/soil_chemistry.csv ./
+docker cp ardy-backend:/app/data/soil_chemistry.csv ./
 ```
 
 ### Copy Files to Container
 
 ```bash
-docker cp ./data/soil_chemistry.csv egyptagri-backend:/app/data/
+docker cp ./data/soil_chemistry.csv ardy-backend:/app/data/
 ```
 
 ---
@@ -558,4 +558,4 @@ docker cp ./data/soil_chemistry.csv egyptagri-backend:/app/data/
 **Version**: 1.0.0  
 **Last Updated**: April 23, 2026
 
-🌾 **EgyptAgri-Pulse: Precision Agriculture for National Food Security** 🌾
+🌾 **ARDY Smart Agriculture: Precision Agriculture for National Food Security** 🌾

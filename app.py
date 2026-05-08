@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-EgyptAgri-Pulse: Streamlit Interactive Dashboard
+ARDY Smart Agriculture: Streamlit Interactive Dashboard
 An AI-driven Decision Support System for Egyptian Agriculture
 """
 
@@ -23,7 +23,7 @@ warnings.filterwarnings('ignore')
 # ============================================================================
 
 st.set_page_config(
-    page_title="EgyptAgri-Pulse",
+    page_title="ARDY Smart Agriculture",
     page_icon="🌾",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -91,7 +91,7 @@ def get_governorates():
 # ============================================================================
 
 # Header
-st.markdown('<div class="main-header">🌾 EgyptAgri-Pulse</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-header">🌾 ARDY Smart Agriculture</div>', unsafe_allow_html=True)
 st.markdown('<div class="sub-header">AI-Driven Decision Support System for Egyptian Agriculture</div>', unsafe_allow_html=True)
 
 # Sidebar Navigation
@@ -121,9 +121,9 @@ if page == "🏠 Dashboard":
     
     st.markdown("---")
     
-    st.markdown("### 📖 About EgyptAgri-Pulse")
+    st.markdown("### 📖 About ARDY Smart Agriculture")
     st.write("""
-    EgyptAgri-Pulse is a comprehensive **Digital Twin of the Egyptian agricultural landscape**, 
+    ARDY Smart Agriculture is a comprehensive **Digital Twin of the Egyptian agricultural landscape**, 
     bridging the gap between:
     
     - **🌍 Real-time Environmental Intelligence** - Live weather data from OpenWeatherMap
@@ -702,7 +702,7 @@ elif page == "📋 Report Generator":
                 st.download_button(
                     label="📥 Download PDF Report",
                     data=response.content,
-                    file_name=f"egyptagri_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                    file_name=f"ardy_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
                     mime="application/pdf"
                 )
             else:
@@ -717,7 +717,7 @@ elif page == "📋 Report Generator":
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: #666; margin-top: 50px;">
-    <p><b>EgyptAgri-Pulse v1.0.0</b></p>
+    <p><b>ARDY Smart Agriculture v1.0.0</b></p>
     <p>An AI-driven Decision Support System for National Food Security in Egypt</p>
     <p style="font-size: 0.9em;">© 2026 | Powered by Machine Learning & Geospatial Intelligence</p>
 </div>

@@ -1,5 +1,5 @@
 ================================================================================
-                    EGYPTAGRI-PULSE WIZARD V2.0
+                    ARDY SMART AGRICULTURE WIZARD V2.0
                     Step-by-Step Interactive Dashboard
 ================================================================================
 
@@ -239,7 +239,7 @@ RUNNING THE WIZARD
 ================================================================================
 
 QUICK START:
-  1. cd egypt-agri-pulse
+  1. cd ardy-smart-agriculture
   2. source venv/bin/activate
   3. streamlit run app_wizard.py
   4. Open http://localhost:8501
@@ -450,7 +450,7 @@ Current Version: 2.0 (April 28, 2026)
 CONCLUSION
 ================================================================================
 
-EgyptAgri-Pulse Wizard V2.0 represents a significant upgrade with:
+ARDY Smart Agriculture Wizard V2.0 represents a significant upgrade with:
 
 ✓ Real datasets replacing synthetic data
 ✓ Dramatically improved ML model accuracy (99.55%)
@@ -464,7 +464,7 @@ and agricultural professionals for data-driven crop selection and yield
 forecasting.
 
 ================================================================================
-🌾 EgyptAgri-Pulse Wizard: Precision Agriculture for National Food Security 🌾
+🌾 ARDY Smart Agriculture Wizard: Precision Agriculture for National Food Security 🌾
 ================================================================================
 
 For questions or support, refer to WIZARD_GUIDE.md or contact support.

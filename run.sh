@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# EgyptAgri-Pulse Startup Script
+# ARDY Smart Agriculture Startup Script
 # Runs both Flask backend and Streamlit frontend
 
 set -e
@@ -9,7 +9,7 @@ set -e
 source venv/bin/activate
 
 echo "=================================================="
-echo "🌾 EgyptAgri-Pulse Startup"
+echo "🌾 ARDY Smart Agriculture Startup"
 echo "=================================================="
 
 # Check if models exist

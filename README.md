@@ -1,12 +1,12 @@
-# EgyptAgri-Pulse: AI-Driven Decision Support System for Egyptian Agriculture
+# ARDY Smart Agriculture: AI-Driven Decision Support System for Egyptian Agriculture
 
 ## 🌾 Project Overview
 
-**EgyptAgri-Pulse** is a comprehensive **Digital Twin of the Egyptian agricultural landscape**, bridging the gap between real-time environmental intelligence, biochemical soil science, and macro-economic historical trends. By fusing data from three independent sources, it provides localized, actionable roadmaps for farmers and policymakers to optimize yield and ensure food security in Egypt.
+**ARDY Smart Agriculture** is a comprehensive **Digital Twin of the Egyptian agricultural landscape**, bridging the gap between real-time environmental intelligence, biochemical soil science, and macro-economic historical trends. By fusing data from three independent sources, it provides localized, actionable roadmaps for farmers and policymakers to optimize yield and ensure food security in Egypt.
 
 ### Vision
 
-EgyptAgri-Pulse is not just a machine learning model; it is an integrated system that combines:
+ARDY Smart Agriculture is not just a machine learning model; it is an integrated system that combines:
 
 - **🌍 Real-time Environmental Intelligence** - Live weather data from OpenWeatherMap API
 - **🧪 Biochemical Soil Science** - Precision analysis of N, P, K levels and pH
@@ -96,7 +96,7 @@ Entire engine hosted on Streamlit platform, featuring:
 ## 📁 Project Structure
 
 ```
-egypt-agri-pulse/
+ardy-smart-agriculture/
 ├── app.py                          # Streamlit dashboard
 ├── backend.py                      # Flask API server
 ├── train_models.py                 # ML model training script
@@ -130,7 +130,7 @@ egypt-agri-pulse/
 
 1. **Clone or navigate to the project directory:**
    ```bash
-   cd egypt-agri-pulse
+   cd ardy-smart-agriculture
    ```
 
 2. **Create and activate virtual environment:**
@@ -532,7 +532,7 @@ This project demonstrates:
 
 ## 🌍 Impact
 
-EgyptAgri-Pulse contributes to:
+ARDY Smart Agriculture contributes to:
 
 - **Food Security**: Optimizing crop selection for local conditions
 - **Resource Efficiency**: Reducing water and fertilizer waste
@@ -546,4 +546,4 @@ EgyptAgri-Pulse contributes to:
 **Last Updated**: April 2026  
 **Status**: Production Ready
 
-🌾 **EgyptAgri-Pulse: Precision Agriculture for National Food Security** 🌾
+🌾 **ARDY Smart Agriculture: Precision Agriculture for National Food Security** 🌾

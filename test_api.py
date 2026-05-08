@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Test script for EgyptAgri-Pulse API endpoints
+Test script for ARDY Smart Agriculture API endpoints
 """
 
 import requests
@@ -121,7 +121,7 @@ def test_pdf_report():
 
 def main():
     print("\n" + "="*60)
-    print("  EgyptAgri-Pulse API Test Suite")
+    print("  ARDY Smart Agriculture API Test Suite")
     print("="*60)
     
     try:

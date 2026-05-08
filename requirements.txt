@@ -1,4 +1,4 @@
-# EgyptAgri-Pulse Requirements
+# ARDY Smart Agriculture Requirements
 # Python 3.10+
 
 # Core Data Science & ML

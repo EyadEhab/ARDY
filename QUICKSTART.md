@@ -1,4 +1,4 @@
-# EgyptAgri-Pulse: Quick Start Guide
+# ARDY Smart Agriculture: Quick Start Guide
 
 ## 🚀 Getting Started in 5 Minutes
 
@@ -8,7 +8,7 @@
 
 ### Step 1: Navigate to Project Directory
 ```bash
-cd egypt-agri-pulse
+cd ardy-smart-agriculture
 ```
 
 ### Step 2: Create Virtual Environment (First Time Only)
@@ -100,7 +100,7 @@ This will test all endpoints and generate a sample PDF report.
 ## 📁 Project Structure
 
 ```
-egypt-agri-pulse/
+ardy-smart-agriculture/
 ├── app.py                      # Streamlit dashboard
 ├── backend.py                  # Flask API
 ├── train_models.py             # Model training
@@ -226,4 +226,4 @@ streamlit run app.py --server.port=8502
 **Status**: Production Ready  
 **Last Updated**: April 2026
 
-🌾 **EgyptAgri-Pulse: Precision Agriculture for National Food Security** 🌾
+🌾 **ARDY Smart Agriculture: Precision Agriculture for National Food Security** 🌾

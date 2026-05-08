@@ -1,5 +1,5 @@
 """
-EgyptAgri-Pulse: Step-by-Step Wizard Dashboard
+ARDY Smart Agriculture: Step-by-Step Wizard Dashboard
 A multi-step interactive guide for crop selection and yield forecasting
 """
 
@@ -15,7 +15,11 @@ from datetime import datetime
 import requests
 import json
 import os
+import csv
+from io import StringIO
 from dotenv import load_dotenv
+
+BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
 
 # Load environment variables from .env file
 load_dotenv()
@@ -24,7 +28,7 @@ load_dotenv()
 # PAGE CONFIGURATION
 # ============================================================================
 st.set_page_config(
-    page_title="EgyptAgri-Pulse Wizard",
+    page_title="ARDY Smart Agriculture Wizard",
     page_icon="🌾",
     layout="wide",
     initial_sidebar_state="collapsed"
@@ -140,40 +144,43 @@ def get_weather_data(governorate):
             temp = data['main']['temp']
             humidity = data['main']['humidity']
             
-            # Get rainfall from API (only contains data when currently raining)
-            rainfall = data.get('rain', {}).get('1h', 0) * 1000
-            
             # Estimate pH based on region (Egypt average is ~7.5)
             ph = 7.5
             
-            return {
+            weather_data = {
                 'temperature': temp,
                 'humidity': humidity,
-                'rainfall': rainfall,
+                'rainfall': 0,
                 'ph': ph,
                 'source': 'OpenWeatherMap API',
                 'location': f"{lat}, {lon}"
             }
         else:
             # Fallback to dataset average if API fails
-            # Use FIXED average from entire dataset (not random sample)
-            return {
+            weather_data = {
                 'temperature': crop_rec_df['temperature'].mean(),
                 'humidity': crop_rec_df['humidity'].mean(),
-                'rainfall': crop_rec_df['rainfall'].mean(),
+                'rainfall': 0,
                 'ph': crop_rec_df['ph'].mean(),
-                'source': 'Dataset Average (API failed)'
+                'source': 'Dataset Average (API failed)',
+                'location': f"{lat}, {lon}"
             }
+        
+        # Override rainfall with governorate yearly average
+        weather_data['rainfall'] = GOVERNORATE_RAINFALL.get(governorate, crop_rec_df['rainfall'].mean())
+        return weather_data
+        
     except Exception as e:
         # Fallback to dataset average if API fails
-        # Use FIXED average from entire dataset (not random sample)
-        return {
+        weather_data = {
             'temperature': crop_rec_df['temperature'].mean(),
             'humidity': crop_rec_df['humidity'].mean(),
-            'rainfall': crop_rec_df['rainfall'].mean(),
+            'rainfall': 0,
             'ph': crop_rec_df['ph'].mean(),
             'source': 'Dataset Average (Error)'
         }
+        weather_data['rainfall'] = GOVERNORATE_RAINFALL.get(governorate, crop_rec_df['rainfall'].mean())
+        return weather_data
 
 def predict_crops(n, p, k, temperature, humidity, ph, rainfall):
     """Predict top 3 crops with confidence scores and explanations"""
@@ -306,6 +313,32 @@ CROP_NAME_MAPPING = {
     'pigeonpeas': 'Chick peas, dry',
 }
 
+# Average annual rainfall (mm) per Egyptian governorate
+GOVERNORATE_RAINFALL = {
+    'Alexandria': 190.0,
+    'Port Said': 125.0,
+    'Matrouh': 140.0,
+    'Damietta': 95.0,
+    'North Sinai': 80.0,
+    'Kafr El-Sheikh': 55.0,
+    'Beheira': 35.0,
+    'Dakahlia': 35.0,
+    'Cairo': 25.0,
+    'Giza': 22.0,
+    'Ismailia': 28.0,
+    'Suez': 25.0,
+    'South Sinai': 20.0,
+    'Fayoum': 12.0,
+    'Beni Suef': 6.0,
+    'Minya': 4.0,
+    'Assiut': 2.5,
+    'Red Sea': 5.0,
+    'Sohag': 1.5,
+    'Qena': 1.5,
+    'Luxor': 1.0,
+    'Aswan': 0.5,
+}
+
 def predict_yield(crop, year=2026):
     """Predict yield for a crop in a given year"""
     
@@ -318,16 +351,21 @@ def predict_yield(crop, year=2026):
     model_data = yield_models[mapped_crop]
     model = model_data['model']
     
-    # Predict yield
-    predicted_yield = model.predict([[year]])[0]
+    # Normalize year (model trained on normalized years)
+    year_min = model_data['min_year']
+    year_max = model_data['max_year']
+    year_norm = (year - year_min) / (year_max - year_min)
+    
+    # Predict yield (kg/ha) and convert to tonnes/ha
+    predicted_yield = model.predict([[year_norm]])[0] / 1000.0
     
     return {
         'crop': crop,
         'year': year,
         'predicted_yield': predicted_yield,
         'r2_score': model_data['r2_score'],
-        'avg_yield': model_data['avg_yield'],
-        'latest_yield': model_data['latest_yield'],
+        'avg_yield': model_data['avg_yield'] / 1000.0,
+        'latest_yield': model_data['latest_yield'] / 1000.0,
         'min_year': model_data['min_year'],
         'max_year': model_data['max_year']
     }
@@ -402,7 +440,7 @@ if 'wizard_data' not in st.session_state:
 
 st.markdown("""
     <div style="text-align: center; margin-bottom: 30px;">
-        <h1>🌾 EgyptAgri-Pulse Wizard</h1>
+        <h1>🌾 ARDY Smart Agriculture Wizard</h1>
         <p style="font-size: 1.1rem; color: #7f8c8d;">
             Step-by-step guide to optimal crop selection and yield forecasting
         </p>
@@ -633,7 +671,7 @@ elif st.session_state.current_step == 2:
         
         data_summary = pd.DataFrame({
             'Parameter': ['Nitrogen (N)', 'Phosphorus (P)', 'Potassium (K)', 'pH'],
-            'Value': [n, p, k, f'{ph:.2f}'],
+            'Value': [f'{n}', f'{p}', f'{k}', f'{ph:.2f}'],
             'Unit': ['mg/kg', 'mg/kg', 'mg/kg', '-']
         })
         
@@ -884,11 +922,75 @@ elif st.session_state.current_step == 4:
     
     with col1:
         if st.button("📄 Generate PDF Report", use_container_width=True, key='generate_pdf'):
-            st.info("📄 PDF generation feature coming soon!")
+            with st.spinner("Generating PDF report..."):
+                try:
+                    response = requests.post(
+                        f"{BACKEND_URL}/api/generate-report",
+                        json={
+                            'governorate': st.session_state.wizard_data['governorate'],
+                            'n': st.session_state.wizard_data['n'],
+                            'p': st.session_state.wizard_data['p'],
+                            'k': st.session_state.wizard_data['k'],
+                            'ph': st.session_state.wizard_data['ph']
+                        },
+                        timeout=15
+                    )
+                    if response.status_code == 200:
+                        st.success("✅ Report generated successfully!")
+                        st.download_button(
+                            label="📥 Download PDF Report",
+                            data=response.content,
+                            file_name=f"ardy_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                            mime="application/pdf",
+                            key='download_pdf'
+                        )
+                    else:
+                        st.error("Error generating PDF report. Please try again.")
+                except Exception as e:
+                    st.error(f"Could not connect to backend server. Error: {e}")
     
     with col2:
         if st.button("📊 Download Data as CSV", use_container_width=True, key='download_csv'):
-            st.info("📊 CSV export feature coming soon!")
+            csv_buffer = StringIO()
+            writer = csv.writer(csv_buffer)
+            
+            writer.writerow(['Section', 'Parameter', 'Value'])
+            wd = st.session_state.wizard_data
+            writer.writerow(['Location', 'Governorate', wd['governorate']])
+            
+            if wd.get('weather'):
+                writer.writerow(['Weather', 'Temperature', f"{wd['weather']['temperature']:.1f} °C"])
+                writer.writerow(['Weather', 'Humidity', f"{wd['weather']['humidity']:.1f} %"])
+                writer.writerow(['Weather', 'Rainfall', f"{wd['weather']['rainfall']:.1f} mm"])
+            
+            writer.writerow(['Soil', 'Nitrogen (N)', f"{wd['n']} mg/kg"])
+            writer.writerow(['Soil', 'Phosphorus (P)', f"{wd['p']} mg/kg"])
+            writer.writerow(['Soil', 'Potassium (K)', f"{wd['k']} mg/kg"])
+            writer.writerow(['Soil', 'pH', f"{wd['ph']:.2f}"])
+            
+            feddan = wd.get('feddan', 1.0)
+            hectares = feddan * 0.42
+            writer.writerow(['Land', 'Area (Feddan)', f"{feddan:.1f}"])
+            writer.writerow(['Land', 'Area (Hectares)', f"{hectares:.2f}"])
+            
+            if wd.get('crop_predictions'):
+                for i, pred in enumerate(wd['crop_predictions']):
+                    yield_pred = predict_yield(pred['crop'])
+                    if yield_pred:
+                        writer.writerow(['Crop', f"Crop #{i+1}", pred['crop']])
+                        writer.writerow(['Crop', f"Confidence #{i+1}", f"{pred['confidence']*100:.1f}%"])
+                        writer.writerow(['Crop', f"Yield #{i+1}", f"{yield_pred['predicted_yield']:.0f} Tonnes/Ha"])
+                        writer.writerow(['Crop', f"Total Production #{i+1}", f"{yield_pred['predicted_yield'] * hectares:.1f} Tons"])
+            
+            csv_data = csv_buffer.getvalue()
+            
+            st.download_button(
+                label="📥 Download CSV Data",
+                data=csv_data,
+                file_name=f"ardy_data_{datetime.now().strftime('%Y%m%d_%H%M%S')}.csv",
+                mime="text/csv",
+                key='download_csv_btn'
+            )
     
     st.divider()
     
@@ -926,7 +1028,7 @@ elif st.session_state.current_step == 4:
 st.divider()
 st.markdown("""
     <div style='text-align: center; color: #7f8c8d; font-size: 0.9rem; padding: 20px;'>
-        <p>🌾 <b>EgyptAgri-Pulse</b> | Precision Agriculture for National Food Security</p>
+        <p>🌾 <b>ARDY Smart Agriculture</b> | Precision Agriculture for National Food Security</p>
         <p>Version 2.0 | Step-by-Step Wizard | Real Data | Real Models</p>
     </div>
 """, unsafe_allow_html=True)

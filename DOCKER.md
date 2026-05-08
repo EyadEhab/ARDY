@@ -1,6 +1,6 @@
-# EgyptAgri-Pulse: Docker Deployment Guide
+# ARDY Smart Agriculture: Docker Deployment Guide
 
-This guide explains how to run EgyptAgri-Pulse using Docker and Docker Compose.
+This guide explains how to run ARDY Smart Agriculture using Docker and Docker Compose.
 
 ## 📋 Prerequisites
 
@@ -14,7 +14,7 @@ This guide explains how to run EgyptAgri-Pulse using Docker and Docker Compose.
 ### 1. Clone/Navigate to Project Directory
 
 ```bash
-cd egypt-agri-pulse
+cd ardy-smart-agriculture
 ```
 
 ### 2. Build and Start Services
@@ -49,28 +49,28 @@ docker-compose down
 ### Services
 
 **1. Backend Service (Flask API)**
-- Container: `egyptagri-backend`
+- Container: `ardy-backend`
 - Port: 5000
 - Image: Python 3.11 + Flask + ML libraries
 - Health Check: Enabled
 - Restart Policy: Unless stopped
 
 **2. Frontend Service (Streamlit Dashboard)**
-- Container: `egyptagri-frontend`
+- Container: `ardy-frontend`
 - Port: 8501
 - Image: Python 3.11 + Streamlit
 - Depends On: Backend service (healthy)
 - Restart Policy: Unless stopped
 
 **3. Data Generator Service**
-- Container: `egyptagri-data-generator`
+- Container: `ardy-data-generator`
 - Runs once on startup
 - Generates datasets and trains models
 - Restart Policy: No (runs once)
 
 ### Network
 
-- Network Name: `egyptagri-network`
+- Network Name: `ardy-network`
 - Driver: Bridge
 - Allows inter-service communication
 
@@ -477,4 +477,4 @@ For issues:
 **Version**: 1.0.0  
 **Last Updated**: April 23, 2026
 
-🌾 **EgyptAgri-Pulse: Precision Agriculture for National Food Security** 🌾
+🌾 **ARDY Smart Agriculture: Precision Agriculture for National Food Security** 🌾

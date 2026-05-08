@@ -1,8 +1,8 @@
-# EgyptAgri-Pulse Wizard: Step-by-Step User Guide
+# ARDY Smart Agriculture Wizard: Step-by-Step User Guide
 
 ## Overview
 
-The EgyptAgri-Pulse Wizard is an interactive, step-by-step guide that helps Egyptian farmers make data-driven decisions about crop selection and yield forecasting. The wizard uses real datasets and advanced ML models to provide personalized recommendations.
+The ARDY Smart Agriculture Wizard is an interactive, step-by-step guide that helps Egyptian farmers make data-driven decisions about crop selection and yield forecasting. The wizard uses real datasets and advanced ML models to provide personalized recommendations.
 
 ---
 
@@ -11,7 +11,7 @@ The EgyptAgri-Pulse Wizard is an interactive, step-by-step guide that helps Egyp
 ### Run the Wizard
 
 ```bash
-cd egypt-agri-pulse
+cd ardy-smart-agriculture
 source venv/bin/activate
 streamlit run app_wizard.py
 ```
@@ -458,4 +458,4 @@ Each recommendation includes 7 factors:
 
 **Version**: 2.0 | **Last Updated**: April 28, 2026
 
-🌾 **EgyptAgri-Pulse Wizard: Precision Agriculture for National Food Security** 🌾
+🌾 **ARDY Smart Agriculture Wizard: Precision Agriculture for National Food Security** 🌾

@@ -1,4 +1,4 @@
-# EgyptAgri-Pulse Wizard V2.0 - Docker Quick Start
+# ARDY Smart Agriculture Wizard V2.0 - Docker Quick Start
 
 ## 🚀 ONE COMMAND TO RUN EVERYTHING
 
@@ -90,7 +90,7 @@ docker-compose logs -f model-trainer
 ## 📁 FOLDER STRUCTURE NEEDED
 
 ```
-egypt-agri-pulse/
+ardy-smart-agriculture/
 ├── app_wizard.py              ← Wizard dashboard
 ├── backend.py                 ← API server
 ├── retrain_models.py          ← Model training
@@ -159,9 +159,9 @@ docker-compose up --build
 When you run `docker-compose up --build`, you should see:
 
 ```
-Creating egyptagri-model-trainer ... done
-Creating egyptagri-backend ... done
-Creating egyptagri-frontend ... done
+Creating ardy-model-trainer ... done
+Creating ardy-backend ... done
+Creating ardy-frontend ... done
 
 model-trainer_1  | ======================================================================
 model-trainer_1  | RETRAINING ML MODELS WITH REAL DATASETS
@@ -289,4 +289,4 @@ Enjoy the wizard! 🎉
 
 **Version**: 2.0 | **Date**: April 28, 2026
 
-🌾 **EgyptAgri-Pulse Wizard: Precision Agriculture for National Food Security** 🌾
+🌾 **ARDY Smart Agriculture Wizard: Precision Agriculture for National Food Security** 🌾
