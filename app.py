@@ -386,7 +386,7 @@ elif page == "🌱 Crop Recommendation":
                     color_continuous_scale='Viridis'
                 )
                 fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
                 
                 # Get SHAP explanation
                 st.markdown("---")
@@ -417,7 +417,7 @@ elif page == "🌱 Crop Recommendation":
                             color_continuous_scale='RdBu'
                         )
                         fig.update_layout(height=400)
-                        st.plotly_chart(fig, use_container_width=True)
+                        st.plotly_chart(fig, width='stretch')
                 except:
                     pass
             else:
@@ -534,7 +534,7 @@ elif page == "📈 Yield Forecasting":
                     height=500
                 )
                 
-                st.plotly_chart(fig, use_container_width=True)
+                st.plotly_chart(fig, width='stretch')
                 
                 # Statistics
                 st.markdown("---")
@@ -588,12 +588,12 @@ elif page == "🩺 Plant Doctor (AI Diagnosis)":
         col1, col2 = st.columns([1, 1])
         
         with col1:
-            st.image(uploaded_file, caption="Uploaded Leaf Image", use_container_width=True)
+            st.image(uploaded_file, caption="Uploaded Leaf Image", width='stretch')
         
         with col2:
             st.info("🔄 Processing image with EfficientNetB0...")
             
-            if st.button("🔍 Run AI Diagnosis"):
+            if st.button("🔬 Start AI Diagnosis"):
                 try:
                     # Prepare the file for sending
                     files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)}

@@ -8,6 +8,7 @@ services:
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models
+      - "./Plant Doctor:/app/Plant Doctor:ro"
     networks:
       - ardy-network
     restart: "no"

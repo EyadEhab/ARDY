@@ -452,8 +452,8 @@ st.markdown("""
 # ============================================================================ 
 pd_col1, pd_col2, pd_col3 = st.columns([3, 2, 3]) 
 with pd_col2: 
-    if st.button("🩺 Plant Doctor", use_container_width=True, key='plant_doctor_btn', 
-                 help="Diagnose plant diseases from leaf images"): 
+    if st.button("🩺 Plant Doctor", width='stretch', key='plant_doctor_btn', 
+                 help="AI-powered disease diagnosis"): 
         st.session_state.show_plant_doctor = not st.session_state.show_plant_doctor 
         st.rerun() 
 
@@ -484,7 +484,7 @@ if st.session_state.show_plant_doctor:
         col_img, col_result = st.columns([1, 1]) 
 
         with col_img: 
-            st.image(uploaded_file, caption="Uploaded Leaf Image", use_container_width=True) 
+            st.image(uploaded_file, caption="Uploaded Leaf Image", width='stretch') 
 
         with col_result: 
             with st.spinner("🔄 Processing image with EfficientNetB0..."): 
@@ -546,7 +546,7 @@ if st.session_state.show_plant_doctor:
 
     # Login section (collapsible) 
     st.divider() 
-    if st.button("⬅️ Back to Wizard", use_container_width=True): 
+    if st.button("⬅️ Back to Wizard", width='stretch'): 
         st.session_state.show_plant_doctor = False 
         st.rerun()
     st.stop()
@@ -627,7 +627,7 @@ if st.session_state.current_step == 1:
                 st.warning(f"ℹ️ Data Source: {source} - Using historical averages")
 
             # Refresh button
-            if st.button("🔄 Refresh Live Data", key='refresh_weather', use_container_width=True):
+            if st.button("🔄 Refresh Live Data", key='refresh_weather', width='stretch'):
                 st.rerun()
 
             col_w1, col_w2 = st.columns(2)
@@ -640,7 +640,7 @@ if st.session_state.current_step == 1:
 
             # Next button
             st.divider()
-            if st.button("➡️ Next: Enter Soil Data", key='next_step1', use_container_width=True):
+            if st.button("➡️ Next: Enter Soil Data", key='next_step1', width='stretch'):
                 st.session_state.current_step = 2
                 st.rerun()
 
@@ -682,7 +682,7 @@ elif st.session_state.current_step == 2:
     st.divider()
     
     # Get crop predictions
-    if st.button("🔍 Get Crop Recommendations", use_container_width=True, key='get_recommendations'):
+    if st.button("🔍 Get Crop Recommendations", width='stretch', key='get_recommendations'):
         weather = st.session_state.wizard_data['weather']
         
         predictions = predict_crops(
@@ -720,12 +720,12 @@ elif st.session_state.current_step == 2:
         # Navigation buttons
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("⬅️ Back", use_container_width=True, key='back_step2'):
+            if st.button("⬅️ Back", width='stretch', key='back_step2'):
                 st.session_state.current_step = 1
                 st.rerun()
         
         with col2:
-            if st.button("➡️ Next: View Yield Forecast", use_container_width=True, key='next_step2'):
+            if st.button("➡️ Next: View Yield Forecast", width='stretch', key='next_step2'):
                 st.session_state.current_step = 3
                 st.rerun()
 
@@ -770,7 +770,7 @@ elif st.session_state.current_step == 3:
     if crop_predictions and len(crop_predictions) > 0:
         # Display yield forecast chart
         fig = create_yield_chart(crop_predictions)
-        st.plotly_chart(fig, use_container_width=True)
+        st.plotly_chart(fig, width='stretch')
         
         st.divider()
         
@@ -842,12 +842,12 @@ elif st.session_state.current_step == 3:
     # Navigation buttons
     col1, col2 = st.columns(2)
     with col1:
-        if st.button("⬅️ Back", use_container_width=True, key='back_step3'):
+        if st.button("⬅️ Back", width='stretch', key='back_step3'):
             st.session_state.current_step = 2
             st.rerun()
     
     with col2:
-        if st.button("➡️ Next: Generate Report", use_container_width=True, key='next_step3'):
+        if st.button("➡️ Next: Generate Report", width='stretch', key='next_step3'):
             st.session_state.current_step = 4
             st.rerun()
 
@@ -921,7 +921,7 @@ elif st.session_state.current_step == 4:
     col1, col2 = st.columns(2)
     
     with col1:
-        if st.button("📄 Generate PDF Report", use_container_width=True, key='generate_pdf'):
+        if st.button("📄 Generate PDF Report", width='stretch', key='generate_pdf'):
             with st.spinner("Generating PDF report..."):
                 try:
                     response = requests.post(
@@ -950,7 +950,7 @@ elif st.session_state.current_step == 4:
                     st.error(f"Could not connect to backend server. Error: {e}")
     
     with col2:
-        if st.button("📊 Download Data as CSV", use_container_width=True, key='download_csv'):
+        if st.button("📊 Download Data as CSV", width='stretch', key='download_csv'):
             csv_buffer = StringIO()
             writer = csv.writer(csv_buffer)
             
@@ -998,12 +998,12 @@ elif st.session_state.current_step == 4:
     col1, col2, col3 = st.columns(3)
     
     with col1:
-        if st.button("⬅️ Back", use_container_width=True, key='back_step4'):
+        if st.button("⬅️ Back", width='stretch', key='back_step4'):
             st.session_state.current_step = 3
             st.rerun()
     
     with col2:
-        if st.button("🔄 Start Over", use_container_width=True, key='restart'):
+        if st.button("🔄 Start Over", width='stretch', key='restart'):
             st.session_state.current_step = 1
             st.session_state.wizard_data = {
                 'governorate': None,

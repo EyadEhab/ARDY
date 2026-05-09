@@ -17,7 +17,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
             numpy==2.4.4 \
             pandas==3.0.2 \
             scikit-learn==1.8.0 \
-            xgboost==3.2.0 && break; \
+            xgboost==3.2.0 \
+            tensorflow-cpu==2.21.0 \
+            Pillow==12.2.0 && break; \
         attempts=$((attempts + 1)); \
         echo "pip install failed, retrying in 15s... ($attempts/5)"; \
         sleep 15; \
@@ -26,10 +28,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy scripts and data
 COPY retrain_models.py .
+COPY train_image_model.py .
 COPY data/ ./data/
 
 # Create models directory
 RUN mkdir -p /app/models
 
-# Run model training
-CMD ["sh", "-c", "sleep 2 && if [ -f /app/models/crop_model.h5 ]; then echo 'Model exists, skipping...'; else python retrain_models.py; fi"]
+# Run only if model doesn't exist
+CMD ["sh", "-c", "sleep 2 && if [ -f /app/models/crop_model.h5 ]; then echo '✅ Model already trained and exists at /app/models/crop_model.h5. Skipping training.'; else python train_image_model.py; fi"]
