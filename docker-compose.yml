@@ -8,7 +8,7 @@ services:
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models
-      - "./Plant Doctor:/app/Plant Doctor:ro"
+      - ./plant_doctor:/app/plant_doctor
     networks:
       - ardy-network
     restart: "no"
@@ -62,6 +62,7 @@ services:
       - STREAMLIT_CLIENT_TOOLBAR_MODE=minimal
       - OPENWEATHER_API_KEY=${OPENWEATHER_API_KEY:-demo_key_for_testing}
       - BACKEND_URL=http://ardy-backend:5000
+      - PLANT_DOCTOR_URL=http://plant-doctor-api:8000
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models:ro
@@ -80,7 +81,7 @@ services:
       - POSTGRES_PASSWORD=plant_doctor_secure
       - POSTGRES_DB=plant_doctor_db
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./plant_doctor/postgres_data:/var/lib/postgresql/data
     networks:
       - ardy-network
     healthcheck:
@@ -104,7 +105,7 @@ services:
 
   plant-doctor-api:
     build:
-      context: ./deploy
+      context: ./plant_doctor
       dockerfile: Dockerfile
     container_name: plant-doctor-api
     ports:
@@ -114,8 +115,10 @@ services:
       - REDIS_URL=${REDIS_URL:-redis://ardy-redis:6379/0}
       - SECRET_KEY=${SECRET_KEY:-your-super-secret-key-for-plant-doctor-saas}
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
+      - MODEL_PATH=/app/models/crop_model.h5
+      - TREATMENTS_PATH=/app/models/treatments.json
     volumes:
-      - ./models:/app/models:ro
+      - ./plant_doctor:/app/models:ro
     depends_on:
       ardy-db:
         condition: service_healthy
@@ -128,6 +131,3 @@ services:
 networks:
   ardy-network:
     driver: bridge
-
-volumes:
-  postgres_data:

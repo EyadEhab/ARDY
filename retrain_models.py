@@ -148,7 +148,7 @@ for crop in crops_to_train:
     year_2026_norm = (2026 - year_min) / (year_max - year_min)
     pred_2026 = model.predict([[year_2026_norm]])[0]
     
-    print(f"  ✓ {crop:30s} | R²: {r2_score:.4f} | 2026 Pred: {pred_2026:.2f} tonnes/ha")
+    print(f"  ✓ {crop:30s} | R²: {r2_score:.4f} | 2026 Pred: {pred_2026:.2f} kg/ha")
 
 # Save yield models
 with open('models/yield_models.pkl', 'wb') as f:

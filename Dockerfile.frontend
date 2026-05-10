@@ -33,6 +33,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy application files
 COPY app_wizard.py .
+COPY plant_doctor/ ./plant_doctor/
 COPY data/ ./data/
 COPY models/ ./models/
 

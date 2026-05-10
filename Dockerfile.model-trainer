@@ -28,11 +28,11 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 
 # Copy scripts and data
 COPY retrain_models.py .
-COPY train_image_model.py .
+COPY plant_doctor/ ./plant_doctor/
 COPY data/ ./data/
 
 # Create models directory
 RUN mkdir -p /app/models
 
 # Run only if model doesn't exist
-CMD ["sh", "-c", "sleep 2 && if [ -f /app/models/crop_model.h5 ]; then echo '✅ Model already trained and exists at /app/models/crop_model.h5. Skipping training.'; else python train_image_model.py; fi"]
+CMD ["sh", "-c", "sleep 2 && if [ -f /app/plant_doctor/crop_model.h5 ]; then echo '✅ Model already trained. Skipping training.'; else cd /app/plant_doctor && python train_image_model.py; fi"]

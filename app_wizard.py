@@ -20,6 +20,7 @@ from io import StringIO
 from dotenv import load_dotenv
 
 BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
+PLANT_DOCTOR_URL = os.getenv('PLANT_DOCTOR_URL', 'http://plant-doctor-api:8000')
 
 # Load environment variables from .env file
 load_dotenv()
@@ -461,90 +462,10 @@ with pd_col2:
 # PLANT DOCTOR PAGE 
 # ============================================================================ 
 if st.session_state.show_plant_doctor: 
-    st.markdown(""" 
-        <div style='background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); 
-                    border: 2px solid #2ecc71; border-radius: 15px; 
-                    padding: 30px; margin-bottom: 20px;'> 
-            <h2 style='color: #2ecc71; text-align: center; margin: 0;'> 
-                🩺 Plant Doctor AI 
-            </h2> 
-            <p style='color: #7f8c8d; text-align: center; margin: 5px 0 0 0;'> 
-                Upload a leaf image for instant disease diagnosis 
-            </p> 
-        </div> 
-    """, unsafe_allow_html=True) 
-
-    uploaded_file = st.file_uploader( 
-        "📸 Choose a leaf image...", 
-        type=['jpg', 'jpeg', 'png'], 
-        key='plant_doctor_upload' 
-    ) 
-
-    if uploaded_file is not None: 
-        col_img, col_result = st.columns([1, 1]) 
-
-        with col_img: 
-            st.image(uploaded_file, caption="Uploaded Leaf Image", width='stretch') 
-
-        with col_result: 
-            with st.spinner("🔄 Processing image with EfficientNetB0..."): 
-                try: 
-                    files = {"file": (uploaded_file.name, uploaded_file.getvalue(), uploaded_file.type)} 
-                    headers = {} 
-
-                    response = requests.post( 
-                        "http://plant-doctor-api:8000/predict", 
-                        files=files, 
-                        headers=headers, 
-                        timeout=30 
-                    ) 
-
-                    if response.status_code == 200: 
-                        result = response.json() 
-                        disease = result.get('disease', 'Unknown') 
-                        conf_raw = result.get('confidence', 0) 
-                        confidence = float(str(conf_raw).replace('%', '')) / (100 if '%' in str(conf_raw) else 1) 
-                        treatment = result.get('treatment', {}) 
-
-                        # Confidence color 
-                        conf_color = "#27ae60" if confidence > 0.8 else "#f39c12" if confidence > 0.5 else "#e74c3c" 
-
-                        st.markdown(f""" 
-                            <div style='background: #1a1a2e; border: 2px solid {conf_color}; 
-                                        border-radius: 10px; padding: 20px; margin-bottom: 15px;'> 
-                                <h3 style='color: {conf_color}; margin: 0;'>🔬 Diagnosis Result</h3> 
-                                <hr style='border-color: {conf_color}; opacity: 0.3;'> 
-                                <p style='color: white; font-size: 1.3rem; margin: 10px 0;'> 
-                                    <b>Disease:</b> {disease} 
-                                </p> 
-                                <p style='color: {conf_color}; font-size: 1.1rem; margin: 5px 0;'> 
-                                    <b>Confidence:</b> {confidence*100:.1f}% 
-                                </p> 
-                            </div> 
-                        """, unsafe_allow_html=True) 
-
-                        if treatment: 
-                            st.markdown("### 💊 Treatment Plan") 
-                            if isinstance(treatment, dict): 
-                                for key, value in treatment.items(): 
-                                    st.write(f"**{key}:** {value}") 
-                            else: 
-                                st.write(treatment) 
-
-                    elif response.status_code == 401: 
-                        st.error("❌ Plant Doctor API rejected the request unexpectedly.") 
-                        st.info("The API should allow direct access now. Please refresh after rebuilding the API service.") 
-
-                    else: 
-                        st.error(f"❌ API Error: {response.status_code}") 
-                        st.code(response.text) 
-
-                except requests.exceptions.ConnectionError: 
-                    st.error("❌ Could not connect to Plant Doctor API on port 8000") 
-                except Exception as e: 
-                    st.error(f"❌ Error: {str(e)}") 
-
-    # Login section (collapsible) 
+    import sys, os
+    sys.path.insert(0, os.path.join(os.path.dirname(__file__), "plant_doctor"))
+    from frontend import render_plant_doctor_ui
+    render_plant_doctor_ui(PLANT_DOCTOR_URL, key_suffix="wizard", style="wizard")
     st.divider() 
     if st.button("⬅️ Back to Wizard", width='stretch'): 
         st.session_state.show_plant_doctor = False 
