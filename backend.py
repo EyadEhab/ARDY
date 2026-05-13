@@ -346,6 +346,8 @@ def generate_report():
         p = float(data.get('p', 25))
         k = float(data.get('k', 150))
         ph = float(data.get('ph', 7.0))
+        feddan = float(data.get('feddan', 1.0))
+        hectares = feddan * 0.42
         
         # Get all data
         weather = get_weather_data(governorate)
@@ -450,9 +452,14 @@ def generate_report():
         # Yield Forecast Section
         if forecast_data:
             elements.append(Paragraph("Yield Forecast (2026)", styles['Heading2']))
+            total_tons = forecast_data['predicted_yield'] * hectares
+            avg_total_tons = forecast_data['historical_avg'] * hectares
             forecast_text = f"<b>Predicted Yield:</b> {forecast_data['predicted_yield']:.2f} tonnes/hectare<br/>" \
                            f"<b>Historical Average:</b> {forecast_data['historical_avg']:.2f} tonnes/hectare<br/>" \
-                           f"<b>Model Confidence (R²):</b> {forecast_data['r2_score']:.4f}"
+                           f"<b>Model Confidence (R²):</b> {forecast_data['r2_score']:.4f}<br/><br/>" \
+                           f"<b>Your Land:</b> {feddan:.1f} Feddan ({hectares:.2f} Ha)<br/>" \
+                           f"<b>Predicted Total Production:</b> {total_tons:.1f} Tons<br/>" \
+                           f"<b>Historical Avg Total:</b> {avg_total_tons:.1f} Tons"
             elements.append(Paragraph(forecast_text, styles['Normal']))
             elements.append(Spacer(1, 0.2*inch))
         

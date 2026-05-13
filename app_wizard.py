@@ -852,7 +852,8 @@ elif st.session_state.current_step == 4:
                             'n': st.session_state.wizard_data['n'],
                             'p': st.session_state.wizard_data['p'],
                             'k': st.session_state.wizard_data['k'],
-                            'ph': st.session_state.wizard_data['ph']
+                            'ph': st.session_state.wizard_data['ph'],
+                            'feddan': st.session_state.wizard_data.get('feddan', 1.0)
                         },
                         timeout=15
                     )

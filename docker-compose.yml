@@ -80,8 +80,6 @@ services:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=plant_doctor_secure
       - POSTGRES_DB=plant_doctor_db
-    volumes:
-      - ./plant_doctor/postgres_data:/var/lib/postgresql/data
     networks:
       - ardy-network
     healthcheck:
