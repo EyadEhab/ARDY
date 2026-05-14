@@ -7,7 +7,7 @@ import numpy as np
 import pickle
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from xgboost import XGBClassifier
 from sklearn.linear_model import LinearRegression
 import warnings
@@ -127,28 +127,59 @@ for crop in crops_to_train:
     year_max = X_yield.max()
     X_yield_norm = (X_yield - year_min) / (year_max - year_min)
     
-    # Train linear regression
-    model = LinearRegression()
-    model.fit(X_yield_norm, y_yield)
+    # Train Linear Regression
+    lr_model = LinearRegression()
+    lr_model.fit(X_yield_norm, y_yield)
+    lr_r2 = lr_model.score(X_yield_norm, y_yield)
     
-    # Calculate R² score
-    r2_score = model.score(X_yield_norm, y_yield)
+    # Train Random Forest Regressor
+    rf_model = RandomForestRegressor(
+        n_estimators=100,
+        max_depth=10,
+        random_state=42,
+        n_jobs=-1
+    )
+    rf_model.fit(X_yield_norm, y_yield)
+    rf_r2 = rf_model.score(X_yield_norm, y_yield)
+    
+    # Pick best model
+    if rf_r2 > lr_r2:
+        best_model = rf_model
+        best_r2 = rf_r2
+        best_name = 'RandomForestRegressor'
+        other_name = 'LinearRegression'
+        other_r2 = lr_r2
+    else:
+        best_model = lr_model
+        best_r2 = lr_r2
+        best_name = 'LinearRegression'
+        other_name = 'RandomForestRegressor'
+        other_r2 = rf_r2
     
     # Store model and stats
     yield_models[crop] = {
-        'model': model,
-        'r2_score': r2_score,
+        'model': best_model,
+        'r2_score': best_r2,
+        'lr_model': lr_model,
+        'lr_r2': lr_r2,
+        'rf_model': rf_model,
+        'rf_r2': rf_r2,
+        'best_model': best_name,
         'min_year': int(year_min),
         'max_year': int(year_max),
         'avg_yield': float(y_yield.mean()),
         'latest_yield': float(y_yield[-1])
     }
     
-    # Predict 2026 yield (in kg/ha)
+    # Predict 2026 yield using best model (in kg/ha)
     year_2026_norm = (2026 - year_min) / (year_max - year_min)
-    pred_2026 = model.predict([[year_2026_norm]])[0]
+    pred_2026 = best_model.predict([[year_2026_norm]])[0]
     
-    print(f"  ✓ {crop:30s} | R²: {r2_score:.4f} | 2026 Pred: {pred_2026:.2f} kg/ha")
+    print(f"  ✓ {crop}")
+    print(f"    LinearRegression R²:            {lr_r2:.4f}")
+    print(f"    RandomForestRegressor R²:        {rf_r2:.4f}")
+    print(f"    → Using {best_name} (R²={best_r2:.4f}) because its accuracy is better than {other_name} (R²={other_r2:.4f})")
+    print(f"    → 2026 Predicted Yield: {pred_2026:.2f} kg/ha")
 
 # Save yield models
 with open('models/yield_models.pkl', 'wb') as f:

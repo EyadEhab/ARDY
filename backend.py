@@ -167,8 +167,8 @@ def forecast_yield(crop, year=2026):
         
         model_info = yield_models[crop]
         model = model_info['model']
-        year_min = model_info['year_min']
-        year_max = model_info['year_max']
+        year_min = model_info['min_year']
+        year_max = model_info['max_year']
         
         # Normalize year
         year_norm = (year - year_min) / (year_max - year_min)
@@ -354,10 +354,24 @@ def generate_report():
         temperature = weather.get('temperature', 25.6) if weather else 25.6
         humidity = weather.get('humidity', 71.5) if weather else 71.5
         rainfall = weather.get('rainfall', 103.5) if weather else 103.5
-        recommendation = recommend_crop(n, p, k, temperature, humidity, ph, rainfall)
-        if not recommendation:
-            return jsonify({'error': 'Error generating crop recommendation'}), 500
-        forecast_data = forecast_yield(recommendation['crop'], 2026)
+
+        # Use provided crop predictions (from Phase 3) or fallback to single recommendation
+        crops = data.get('crops', None)
+        if not crops:
+            recommendation = recommend_crop(n, p, k, temperature, humidity, ph, rainfall)
+            if not recommendation:
+                return jsonify({'error': 'Error generating crop recommendation'}), 500
+            forecast_data = forecast_yield(recommendation['crop'], 2026)
+            if forecast_data:
+                crops = [{
+                    'crop': recommendation['crop'],
+                    'confidence': recommendation['confidence'],
+                    'predicted_yield': forecast_data['predicted_yield'],
+                    'avg_yield': forecast_data['historical_avg'],
+                    'r2_score': forecast_data['r2_score'],
+                    'total_tons': forecast_data['predicted_yield'] * hectares,
+                    'avg_total_tons': forecast_data['historical_avg'] * hectares
+                }]
         
         # Create PDF
         pdf_buffer = BytesIO()
@@ -440,27 +454,40 @@ def generate_report():
             elements.append(weather_table)
             elements.append(Spacer(1, 0.2*inch))
         
-        # Recommendation Section
-        if recommendation:
-            elements.append(Paragraph("Crop Recommendation", styles['Heading2']))
-            rec_text = f"<b>Recommended Crop:</b> {recommendation['crop']}<br/>" \
-                       f"<b>Confidence:</b> {recommendation['confidence']:.1%}<br/>" \
-                       f"<b>Recommendation Basis:</b> Based on soil nutrient analysis and pH levels"
-            elements.append(Paragraph(rec_text, styles['Normal']))
+        # Crop Recommendations & Production Forecast Section
+        if crops:
+            elements.append(Paragraph("Crop Recommendations & Production Forecast", styles['Heading2']))
+            
+            crop_table_data = [
+                ['#', 'Crop', 'Confidence', 'Yield (T/Ha)', 'Total Production (Tons)']
+            ]
+            for i, crop in enumerate(crops, 1):
+                crop_table_data.append([
+                    str(i),
+                    crop['crop'].upper(),
+                    f"{crop.get('confidence', 0)*100:.1f}%",
+                    f"{crop['predicted_yield']:.0f}",
+                    f"{crop['total_tons']:.1f}"
+                ])
+            
+            crop_table = Table(crop_table_data, colWidths=[0.4*inch, 1.5*inch, 1*inch, 1.1*inch, 1.8*inch])
+            crop_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            ]))
+            elements.append(crop_table)
             elements.append(Spacer(1, 0.2*inch))
-        
-        # Yield Forecast Section
-        if forecast_data:
-            elements.append(Paragraph("Yield Forecast (2026)", styles['Heading2']))
-            total_tons = forecast_data['predicted_yield'] * hectares
-            avg_total_tons = forecast_data['historical_avg'] * hectares
-            forecast_text = f"<b>Predicted Yield:</b> {forecast_data['predicted_yield']:.2f} tonnes/hectare<br/>" \
-                           f"<b>Historical Average:</b> {forecast_data['historical_avg']:.2f} tonnes/hectare<br/>" \
-                           f"<b>Model Confidence (R²):</b> {forecast_data['r2_score']:.4f}<br/><br/>" \
-                           f"<b>Your Land:</b> {feddan:.1f} Feddan ({hectares:.2f} Ha)<br/>" \
-                           f"<b>Predicted Total Production:</b> {total_tons:.1f} Tons<br/>" \
-                           f"<b>Historical Avg Total:</b> {avg_total_tons:.1f} Tons"
-            elements.append(Paragraph(forecast_text, styles['Normal']))
+            
+            # Land & Production Summary
+            land_text = f"<b>Your Land:</b> {feddan:.1f} Feddan ({hectares:.2f} Ha)<br/>"
+            for i, crop in enumerate(crops, 1):
+                land_text += f"<b>{crop['crop'].upper()} Production:</b> {crop['total_tons']:.1f} Tons (avg: {crop['avg_total_tons']:.1f} Tons)<br/>"
+            elements.append(Paragraph(land_text, styles['Normal']))
             elements.append(Spacer(1, 0.2*inch))
         
         # Footer

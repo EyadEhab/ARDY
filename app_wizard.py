@@ -823,16 +823,37 @@ elif st.session_state.current_step == 4:
         for pred in st.session_state.wizard_data['crop_predictions']:
             yield_pred = predict_yield(pred['crop'])
             if yield_pred:
-                # Calculate total tons
                 yield_pred['total_tons'] = yield_pred['predicted_yield'] * hectares
                 yield_pred['avg_total_tons'] = yield_pred['avg_yield'] * hectares
+                yield_pred['confidence'] = pred['confidence']
                 crop_predictions.append(yield_pred)
     
+    # Production summary cards (like Phase 3)
+    st.markdown(f"*Based on your land size of **{feddan:.1f} Feddan ({hectares:.2f} Ha)**")
+    prod_cols = st.columns(3)
+    
+    for i, pred in enumerate(crop_predictions):
+        with prod_cols[i]:
+            st.markdown(f"""
+                <div class='crop-card'>
+                    <h3 style='margin:0; color:#27ae60;'>{pred['crop'].upper()}</h3>
+                    <hr style='border-color:#2ecc71; opacity:0.3;'>
+                    <p style='margin:5px 0;'><b>Confidence:</b> {pred['confidence']*100:.1f}%</p>
+                    <p style='margin:5px 0;'><b>Yield:</b> {pred['predicted_yield']:.0f} T/Ha</p>
+                    <p style='margin:5px 0; font-size:1.2rem; color:#27ae60;'><b>Total: {pred['total_tons']:.1f} Tons</b></p>
+                    <p style='margin:5px 0; font-size:0.9rem; color:#7f8c8d;'>Avg: {pred['avg_total_tons']:.1f} Tons</p>
+                </div>
+            """, unsafe_allow_html=True)
+    
+    # Detailed breakdown
+    st.divider()
+    st.subheader("📋 Production Breakdown per Crop")
+    
     for i, pred in enumerate(crop_predictions, 1):
-        st.write(f"**#{i} {pred['crop'].upper()}**")
-        st.write(f"   - Confidence: {st.session_state.wizard_data['crop_predictions'][i-1]['confidence']*100:.1f}%")
-        st.write(f"   - Yield: {pred['predicted_yield']:.0f} Tonnes/Ha")
-        st.write(f"   - **Total Production: {pred['total_tons']:.1f} Tons** (for {feddan:.1f} Feddan)")
+        st.markdown(f"**#{i} {pred['crop'].upper()}**")
+        st.write(f"- Confidence: {pred['confidence']*100:.1f}%")
+        st.write(f"- Yield: {pred['predicted_yield']:.0f} Tonnes/Ha")
+        st.write(f"- **Total Production: {pred['total_tons']:.1f} Tons** (for {feddan:.1f} Feddan)")
     
     st.divider()
     
@@ -845,16 +866,34 @@ elif st.session_state.current_step == 4:
         if st.button("📄 Generate PDF Report", width='stretch', key='generate_pdf'):
             with st.spinner("Generating PDF report..."):
                 try:
+                    # Prepare crop predictions with production data for PDF
+                    crops_data = []
+                    wd = st.session_state.wizard_data
+                    for i, pred in enumerate(wd.get('crop_predictions', [])):
+                        yield_pred = predict_yield(pred['crop'])
+                        if yield_pred:
+                            crops_data.append({
+                                'crop': pred['crop'],
+                                'confidence': pred['confidence'],
+                                'predicted_yield': yield_pred['predicted_yield'],
+                                'avg_yield': yield_pred['avg_yield'],
+                                'r2_score': yield_pred['r2_score'],
+                                'total_tons': yield_pred['predicted_yield'] * hectares,
+                                'avg_total_tons': yield_pred['avg_yield'] * hectares
+                            })
+                    
+                    payload = {
+                        'governorate': wd['governorate'],
+                        'n': wd['n'],
+                        'p': wd['p'],
+                        'k': wd['k'],
+                        'ph': wd['ph'],
+                        'feddan': wd.get('feddan', 1.0),
+                        'crops': crops_data
+                    }
                     response = requests.post(
                         f"{BACKEND_URL}/api/generate-report",
-                        json={
-                            'governorate': st.session_state.wizard_data['governorate'],
-                            'n': st.session_state.wizard_data['n'],
-                            'p': st.session_state.wizard_data['p'],
-                            'k': st.session_state.wizard_data['k'],
-                            'ph': st.session_state.wizard_data['ph'],
-                            'feddan': st.session_state.wizard_data.get('feddan', 1.0)
-                        },
+                        json=payload,
                         timeout=15
                     )
                     if response.status_code == 200:
