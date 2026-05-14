@@ -8,7 +8,6 @@ services:
     volumes:
       - ./data:/app/data:ro
       - ./models:/app/models
-      - ./plant_doctor:/app/plant_doctor
     networks:
       - ardy-network
     restart: "no"
@@ -115,8 +114,6 @@ services:
       - JWT_ALGORITHM=${JWT_ALGORITHM:-HS256}
       - MODEL_PATH=/app/models/crop_model.h5
       - TREATMENTS_PATH=/app/models/treatments.json
-    volumes:
-      - ./plant_doctor:/app/models:ro
     depends_on:
       ardy-db:
         condition: service_healthy

@@ -59,8 +59,9 @@ ENV TF_CPP_MIN_LOG_LEVEL=2 \
 # Copy application code (renamed from api.py to app.py for gunicorn)
 COPY --chown=appuser:appuser api.py app.py
 
-# Create models directory (to be mounted via volume in production)
-RUN mkdir -p /app/models
+# Copy model and treatments data into the image (no longer mounted via volume)
+COPY --chown=appuser:appuser crop_model.h5 /app/models/crop_model.h5
+COPY --chown=appuser:appuser treatments.json /app/models/treatments.json
 
 # Expose FastAPI port
 EXPOSE 8000
