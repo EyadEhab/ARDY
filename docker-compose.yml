@@ -13,7 +13,7 @@ services:
       - ardy-network
     restart: "no"
     healthcheck:
-      test: ["CMD", "test", "-f", "/app/models/xgb_crop_classifier.pkl"]
+      test: ["CMD", "test", "-f", "/app/plant_doctor/crop_model.h5"]
       interval: 5s
       timeout: 10s
       retries: 30

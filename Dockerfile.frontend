@@ -10,21 +10,14 @@ RUN apt-get update && apt-get install -y \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
+# Copy requirements first for layer caching
+COPY requirements-frontend.txt .
+
 # Install only the frontend runtime dependencies with pip cache and retries
 RUN --mount=type=cache,target=/root/.cache/pip \
     attempts=0; \
     until [ $attempts -ge 5 ]; do \
-        pip install --default-timeout=1000 \
-            numpy==2.4.4 \
-            pandas==3.0.2 \
-            scikit-learn==1.8.0 \
-            xgboost==3.2.0 \
-            requests==2.33.1 \
-            streamlit==1.56.0 \
-            streamlit-folium==0.27.1 \
-            plotly==6.7.0 \
-            folium==0.20.0 \
-            python-dotenv==1.2.2 && break; \
+        pip install --default-timeout=1000 -r requirements-frontend.txt && break; \
         attempts=$((attempts + 1)); \
         echo "pip install failed, retrying in 15s... ($attempts/5)"; \
         sleep 15; \
