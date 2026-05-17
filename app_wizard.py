@@ -16,10 +16,14 @@ import requests
 import json
 import os
 import csv
-from io import StringIO
+from io import BytesIO, StringIO
 from dotenv import load_dotenv
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Table, TableStyle, Paragraph, Spacer
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 
-BACKEND_URL = os.getenv('BACKEND_URL', 'http://localhost:5000')
 PLANT_DOCTOR_URL = os.getenv('PLANT_DOCTOR_URL', 'http://plant-doctor-api:8000')
 
 # Load environment variables from .env file
@@ -145,14 +149,12 @@ def get_weather_data(governorate):
             temp = data['main']['temp']
             humidity = data['main']['humidity']
             
-            # Estimate pH based on region (Egypt average is ~7.5)
-            ph = 7.5
+
             
             weather_data = {
                 'temperature': temp,
                 'humidity': humidity,
                 'rainfall': 0,
-                'ph': ph,
                 'source': 'OpenWeatherMap API',
                 'location': f"{lat}, {lon}"
             }
@@ -162,7 +164,6 @@ def get_weather_data(governorate):
                 'temperature': crop_rec_df['temperature'].mean(),
                 'humidity': crop_rec_df['humidity'].mean(),
                 'rainfall': 0,
-                'ph': crop_rec_df['ph'].mean(),
                 'source': 'Dataset Average (API failed)',
                 'location': f"{lat}, {lon}"
             }
@@ -177,7 +178,6 @@ def get_weather_data(governorate):
             'temperature': crop_rec_df['temperature'].mean(),
             'humidity': crop_rec_df['humidity'].mean(),
             'rainfall': 0,
-            'ph': crop_rec_df['ph'].mean(),
             'source': 'Dataset Average (Error)'
         }
         weather_data['rainfall'] = GOVERNORATE_RAINFALL.get(governorate, crop_rec_df['rainfall'].mean())
@@ -409,6 +409,129 @@ def create_yield_chart(crop_predictions):
     
     return fig
 
+def generate_pdf_report(governorate, n, p, k, ph, feddan, crops_data, weather_data):
+    """Generate PDF report with analysis"""
+    try:
+        hectares = feddan * 0.42
+        temperature = weather_data.get('temperature', 25.6)
+        humidity = weather_data.get('humidity', 71.5)
+        rainfall = weather_data.get('rainfall', 103.5)
+
+        pdf_buffer = BytesIO()
+        doc = SimpleDocTemplate(pdf_buffer, pagesize=letter)
+        elements = []
+        styles = getSampleStyleSheet()
+
+        title_style = ParagraphStyle(
+            'CustomTitle', parent=styles['Heading1'],
+            fontSize=24, textColor=colors.HexColor('#1f4788'),
+            spaceAfter=30, alignment=1
+        )
+        elements.append(Paragraph("ARDY Smart Agriculture Report", title_style))
+        elements.append(Spacer(1, 0.3*inch))
+
+        metadata = [
+            ['Report Generated:', datetime.now().strftime('%Y-%m-%d %H:%M:%S')],
+            ['Governorate:', governorate],
+            ['System Version:', '1.0.0'],
+        ]
+        metadata_table = Table(metadata, colWidths=[2*inch, 4*inch])
+        metadata_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (0, -1), colors.HexColor('#e8f0f8')),
+            ('TEXTCOLOR', (0, 0), (-1, -1), colors.black),
+            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
+            ('FONTNAME', (0, 0), (0, -1), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ]))
+        elements.append(metadata_table)
+        elements.append(Spacer(1, 0.3*inch))
+
+        elements.append(Paragraph("Soil Analysis", styles['Heading2']))
+        soil_data = [
+            ['Property', 'Value', 'Unit'],
+            ['Nitrogen (N)', f"{n:.1f}", 'mg/kg'],
+            ['Phosphorus (P)', f"{p:.1f}", 'mg/kg'],
+            ['Potassium (K)', f"{k:.1f}", 'mg/kg'],
+            ['pH Level', f"{ph:.2f}", ''],
+        ]
+        soil_table = Table(soil_data, colWidths=[2*inch, 2*inch, 2*inch])
+        soil_table.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+            ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+            ('FONTSIZE', (0, 0), (-1, -1), 10),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+            ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+        ]))
+        elements.append(soil_table)
+        elements.append(Spacer(1, 0.2*inch))
+
+        if weather_data:
+            elements.append(Paragraph("Weather Conditions", styles['Heading2']))
+            weather_table_data = [
+                ['Parameter', 'Value', 'Unit'],
+                ['Temperature', f"{temperature:.1f}", '°C'],
+                ['Humidity', f"{humidity:.1f}", '%'],
+                ['Rainfall', f"{rainfall:.2f}", 'mm'],
+            ]
+            weather_table = Table(weather_table_data, colWidths=[2*inch, 2*inch, 2*inch])
+            weather_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            ]))
+            elements.append(weather_table)
+            elements.append(Spacer(1, 0.2*inch))
+
+        if crops_data:
+            elements.append(Paragraph("Crop Recommendations & Production Forecast", styles['Heading2']))
+            crop_table_data = [
+                ['#', 'Crop', 'Confidence', 'Yield (T/Ha)', 'Total Production (Tons)']
+            ]
+            for i, crop in enumerate(crops_data, 1):
+                crop_table_data.append([
+                    str(i),
+                    crop['crop'].upper(),
+                    f"{crop.get('confidence', 0)*100:.1f}%",
+                    f"{crop['predicted_yield']:.0f}",
+                    f"{crop['total_tons']:.1f}"
+                ])
+            crop_table = Table(crop_table_data, colWidths=[0.4*inch, 1.5*inch, 1*inch, 1.1*inch, 1.8*inch])
+            crop_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor('#1f4788')),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+                ('FONTSIZE', (0, 0), (-1, -1), 10),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 12),
+                ('GRID', (0, 0), (-1, -1), 1, colors.grey),
+            ]))
+            elements.append(crop_table)
+            elements.append(Spacer(1, 0.2*inch))
+
+            land_text = f"<b>Your Land:</b> {feddan:.1f} Feddan ({hectares:.2f} Ha)<br/>"
+            for i, crop in enumerate(crops_data, 1):
+                land_text += f"<b>{crop['crop'].upper()} Production:</b> {crop['total_tons']:.1f} Tons (avg: {crop['avg_total_tons']:.1f} Tons)<br/>"
+            elements.append(Paragraph(land_text, styles['Normal']))
+            elements.append(Spacer(1, 0.2*inch))
+
+        elements.append(Spacer(1, 0.3*inch))
+        footer_text = "This report was generated by ARDY Smart Agriculture, an AI-driven Decision Support System for Egyptian Agriculture."
+        elements.append(Paragraph(footer_text, styles['Normal']))
+
+        doc.build(elements)
+        pdf_buffer.seek(0)
+        return pdf_buffer
+    except Exception as e:
+        raise e
+
 # ============================================================================
 # SESSION STATE MANAGEMENT
 # ============================================================================
@@ -610,7 +733,7 @@ elif st.session_state.current_step == 2:
             n, p, k,
             weather['temperature'],
             weather['humidity'],
-            ph,  # Use pH from Layer 2 slider (user-controlled)
+            ph, 
             weather['rainfall']
         )
         
@@ -866,10 +989,9 @@ elif st.session_state.current_step == 4:
         if st.button("📄 Generate PDF Report", width='stretch', key='generate_pdf'):
             with st.spinner("Generating PDF report..."):
                 try:
-                    # Prepare crop predictions with production data for PDF
-                    crops_data = []
                     wd = st.session_state.wizard_data
-                    for i, pred in enumerate(wd.get('crop_predictions', [])):
+                    crops_data = []
+                    for pred in wd.get('crop_predictions', []):
                         yield_pred = predict_yield(pred['crop'])
                         if yield_pred:
                             crops_data.append({
@@ -881,34 +1003,27 @@ elif st.session_state.current_step == 4:
                                 'total_tons': yield_pred['predicted_yield'] * hectares,
                                 'avg_total_tons': yield_pred['avg_yield'] * hectares
                             })
-                    
-                    payload = {
-                        'governorate': wd['governorate'],
-                        'n': wd['n'],
-                        'p': wd['p'],
-                        'k': wd['k'],
-                        'ph': wd['ph'],
-                        'feddan': wd.get('feddan', 1.0),
-                        'crops': crops_data
-                    }
-                    response = requests.post(
-                        f"{BACKEND_URL}/api/generate-report",
-                        json=payload,
-                        timeout=15
+
+                    pdf_buffer = generate_pdf_report(
+                        governorate=wd['governorate'],
+                        n=wd['n'],
+                        p=wd['p'],
+                        k=wd['k'],
+                        ph=wd['ph'],
+                        feddan=wd.get('feddan', 1.0),
+                        crops_data=crops_data,
+                        weather_data=wd['weather']
                     )
-                    if response.status_code == 200:
-                        st.success("✅ Report generated successfully!")
-                        st.download_button(
-                            label="📥 Download PDF Report",
-                            data=response.content,
-                            file_name=f"ardy_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
-                            mime="application/pdf",
-                            key='download_pdf'
-                        )
-                    else:
-                        st.error("Error generating PDF report. Please try again.")
+                    st.success("✅ Report generated successfully!")
+                    st.download_button(
+                        label="📥 Download PDF Report",
+                        data=pdf_buffer,
+                        file_name=f"ardy_report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf",
+                        mime="application/pdf",
+                        key='download_pdf'
+                    )
                 except Exception as e:
-                    st.error(f"Could not connect to backend server. Error: {e}")
+                    st.error(f"Error generating PDF report: {e}")
     
     with col2:
         if st.button("📊 Download Data as CSV", width='stretch', key='download_csv'):

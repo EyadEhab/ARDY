@@ -8,7 +8,7 @@ docker-compose up --build
 
 That's it! Everything will automatically:
 - ✅ Train ML models with real data
-- ✅ Start backend API (port 5000)
+- ✅ Start Streamlit wizard (port 8501)
 - ✅ Start wizard dashboard (port 8501)
 - ✅ Set up networking between services
 
@@ -53,8 +53,8 @@ docker-compose logs -f
 # Just frontend
 docker-compose logs -f frontend
 
-# Just backend
-docker-compose logs -f backend
+# Just frontend
+docker-compose logs -f frontend
 
 # Just model trainer
 docker-compose logs -f model-trainer
@@ -73,13 +73,7 @@ docker-compose logs -f model-trainer
 - Takes ~2-3 minutes
 - Then stops (runs only once)
 
-### 2. Backend API (After Models Ready)
-- Starts Flask server on port 5000
-- Loads trained models
-- Ready to serve predictions
-- Health check: http://localhost:5000/api/health
-
-### 3. Frontend Wizard (After Backend Ready)
+### 2. Frontend Wizard (After Models Ready)
 - Starts Streamlit on port 8501
 - Loads models and data
 - Ready for user interaction
@@ -92,11 +86,10 @@ docker-compose logs -f model-trainer
 ```
 ardy-smart-agriculture/
 ├── app_wizard.py              ← Wizard dashboard
-├── backend.py                 ← API server
+├── app_wizard.py              ← Wizard dashboard
 ├── retrain_models.py          ← Model training
 ├── docker-compose.yml         ← This file
 ├── Dockerfile.model-trainer   ← Model trainer image
-├── Dockerfile.backend         ← Backend image
 ├── Dockerfile.frontend        ← Frontend image
 │
 ├── data/
@@ -128,11 +121,6 @@ If not set, uses demo data.
 docker-compose logs model-trainer
 ```
 
-### Backend won't start
-```bash
-docker-compose logs backend
-```
-
 ### Frontend won't load
 ```bash
 docker-compose logs frontend
@@ -142,7 +130,6 @@ docker-compose logs frontend
 ```bash
 # Change in docker-compose.yml:
 ports:
-  - "8000:5000"  # Use 8000 instead of 5000
   - "8080:8501"  # Use 8080 instead of 8501
 ```
 
@@ -160,7 +147,6 @@ When you run `docker-compose up --build`, you should see:
 
 ```
 Creating ardy-model-trainer ... done
-Creating ardy-backend ... done
 Creating ardy-frontend ... done
 
 model-trainer_1  | ======================================================================
@@ -174,9 +160,6 @@ model-trainer_1  | ✓ Saved all yield models
 model-trainer_1  | ======================================================================
 model-trainer_1  | MODEL TRAINING COMPLETE
 model-trainer_1  | ======================================================================
-
-backend_1        | [2026-04-28 12:00:00] Starting Flask server...
-backend_1        | [2026-04-28 12:00:01] Server running on http://0.0.0.0:5000
 
 frontend_1       | [2026-04-28 12:00:05] Welcome to Streamlit!
 frontend_1       | [2026-04-28 12:00:10] Server running on http://0.0.0.0:8501
@@ -211,14 +194,9 @@ Once running, the wizard has 4 steps:
 
 ## 🎯 COMMON TASKS
 
-### Run wizard only (no backend)
+### Run wizard only
 ```bash
 docker-compose up frontend
-```
-
-### Run backend API only
-```bash
-docker-compose up backend
 ```
 
 ### Retrain models

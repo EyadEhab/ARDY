@@ -49,8 +49,7 @@ TECHNICAL STACK
 ================================================================================
 
 Backend:
-  • Flask 3.1.3 - REST API server
-  • Flask-CORS 6.0.2 - Cross-origin support
+  • ReportLab 4.4.10 - PDF report generation
   • Python 3.10+ - Core language
 
 Machine Learning:
@@ -194,7 +193,7 @@ FILES & STRUCTURE
 
 Core Application Files:
   ✓ app.py (22 KB) - Streamlit dashboard
-  ✓ backend.py (18 KB) - Flask API server
+  ✓ app_wizard.py (28 KB) - Streamlit wizard dashboard (includes PDF generation)
   ✓ train_models.py (5.2 KB) - Model training script
   ✓ generate_datasets.py (6.7 KB) - Data generation script
   ✓ test_api.py (4.5 KB) - API test suite
@@ -242,11 +241,11 @@ Local Development:
   Frontend: http://localhost:8501
 
 Services:
-  • Flask development server (port 5000)
+  • Streamlit development server (port 8501)
   • Streamlit development server (port 8501)
 
 Production Deployment:
-  • Use Gunicorn for Flask backend
+  • PDF reports generated directly in Streamlit via ReportLab
   • Use Streamlit Cloud for frontend
   • Configure environment variables
   • Set up SSL/TLS certificates

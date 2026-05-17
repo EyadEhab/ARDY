@@ -33,7 +33,6 @@ docker-compose up --build
 # Wait for data generation and model training (2-3 minutes)
 # Then access:
 # - Dashboard: http://localhost:8501
-# - API: http://localhost:5000/api/health
 ```
 
 ### 2. Restart Services
@@ -43,7 +42,6 @@ docker-compose up --build
 docker-compose restart
 
 # Restart specific service
-docker-compose restart backend
 docker-compose restart frontend
 ```
 
@@ -57,7 +55,6 @@ docker-compose logs -f
 docker-compose logs --tail=100
 
 # Specific service
-docker-compose logs -f backend
 docker-compose logs -f frontend
 
 # Follow logs in real-time
@@ -67,41 +64,13 @@ docker-compose logs -f --timestamps
 ### 4. Execute Commands in Containers
 
 ```bash
-# Access backend shell
-docker-compose exec backend bash
-
-# Run tests
-docker-compose exec backend python test_api.py
-
-# Check Python version
-docker-compose exec backend python --version
-
 # Access frontend shell
 docker-compose exec frontend bash
 ```
 
-### 5. Test API Endpoints
+### 5. Access the Wizard
 
-```bash
-# Health check
-curl http://localhost:5000/api/health
-
-# Get governorates
-curl http://localhost:5000/api/governorates
-
-# Get weather for Cairo
-curl http://localhost:5000/api/weather/Cairo
-
-# Crop recommendation
-curl -X POST http://localhost:5000/api/recommend-crop \
-  -H "Content-Type: application/json" \
-  -d '{"n": 60, "p": 30, "k": 200, "ph": 7.2}'
-
-# Yield forecast
-curl -X POST http://localhost:5000/api/forecast-yield \
-  -H "Content-Type: application/json" \
-  -d '{"crop": "Wheat", "year": 2026}'
-```
+Open http://localhost:8501 in your browser. The wizard handles all predictions and report generation in-app.
 
 ### 6. View Resource Usage
 
@@ -110,7 +79,7 @@ curl -X POST http://localhost:5000/api/forecast-yield \
 docker stats
 
 # Specific container
-docker stats ardy-backend
+docker stats ardy-frontend
 
 # Memory usage
 docker stats --no-stream
@@ -123,7 +92,7 @@ docker stats --no-stream
 docker-compose build --no-cache
 
 # Rebuild specific service
-docker-compose build --no-cache backend
+docker-compose build --no-cache frontend
 
 # Build and restart
 docker-compose up --build -d
@@ -139,7 +108,7 @@ docker-compose down
 docker-compose down -v
 
 # Remove images
-docker image rm ardy-pulse_backend ardy-pulse_frontend
+docker image rm ardy-pulse_frontend
 
 # Remove all unused images
 docker image prune -a
@@ -152,39 +121,23 @@ docker volume prune
 
 ## Troubleshooting
 
-### Backend Won't Start
+### Frontend Won't Start
 
 ```bash
 # Check logs
-docker-compose logs backend
+docker-compose logs frontend
 
-# Verify health check
+# Verify status
 docker-compose ps
 
 # Rebuild
-docker-compose build --no-cache backend
-docker-compose up backend
-```
-
-### Frontend Can't Connect to Backend
-
-```bash
-# Test connectivity from frontend container
-docker-compose exec frontend curl http://backend:5000/api/health
-
-# Check if backend is running
-docker-compose ps backend
-
-# Restart both
-docker-compose restart backend frontend
+docker-compose build --no-cache frontend
+docker-compose up frontend
 ```
 
 ### Port Already in Use
 
 ```bash
-# Find what's using port 5000
-lsof -i :5000
-
 # Find what's using port 8501
 lsof -i :8501
 
@@ -211,7 +164,7 @@ docker stats
 docker volume ls
 
 # Verify volume mount
-docker-compose exec backend ls -la /app/data
+docker-compose exec frontend ls -la /app/data
 
 # Inspect volume
 docker volume inspect ardy-smart-agriculture_data
@@ -227,7 +180,6 @@ Create `.env` file:
 
 ```env
 OPENWEATHER_API_KEY=your_api_key_here
-FLASK_ENV=production
 ```
 
 Then run:
@@ -253,73 +205,38 @@ docker-compose --env-file custom.env up
 ### Modify Code and Rebuild
 
 ```bash
-# Edit backend.py
-nano backend.py
+# Example: edit app_wizard.py
+nano app_wizard.py
 
-# Rebuild and restart
-docker-compose up --build backend
-
-# Restart frontend to pick up changes
-docker-compose restart frontend
+# Rebuild and restart frontend
+docker-compose up --build frontend
 ```
 
 ### Add New Dependencies
 
 ```bash
-# Edit requirements.txt
-nano requirements.txt
+# Edit requirements-frontend.txt
+nano requirements-frontend.txt
 
 # Rebuild
-docker-compose build --no-cache backend
+docker-compose build --no-cache frontend
 
 # Restart
-docker-compose up backend
+docker-compose up frontend
 ```
 
 ### Retrain Models
 
 ```bash
-# Access backend container
-docker-compose exec backend bash
-
-# Regenerate data
-python generate_datasets.py
-
-# Retrain models
-python train_models.py
-
-# Exit
-exit
+# Run model trainer
+docker-compose up model-trainer
 ```
+
+
 
 ---
 
 ## Performance Optimization
-
-### Increase Backend Workers
-
-Edit `Dockerfile.backend`:
-
-```dockerfile
-# Change workers from 4 to 8
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "8", ...]
-```
-
-Then rebuild:
-
-```bash
-docker-compose build --no-cache backend
-docker-compose up backend
-```
-
-### Increase Timeout
-
-Edit `Dockerfile.backend`:
-
-```dockerfile
-# Change timeout from 120 to 300 seconds
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "300", ...]
-```
 
 ### Set Memory Limits
 
@@ -327,7 +244,7 @@ Edit `docker-compose.yml`:
 
 ```yaml
 services:
-  backend:
+  frontend:
     deploy:
       resources:
         limits:
@@ -351,9 +268,6 @@ docker stack deploy -c docker-compose.yml ardy
 
 # View services
 docker service ls
-
-# Scale service
-docker service scale ardy_backend=3
 ```
 
 ### Using Kubernetes
@@ -373,13 +287,13 @@ kubectl get pods
 
 ```bash
 # Tag image
-docker tag ardy-pulse_backend myregistry/ardy-backend:1.0.0
+docker tag ardy-pulse_frontend myregistry/ardy-frontend:1.0.0
 
 # Push to registry
-docker push myregistry/ardy-backend:1.0.0
+docker push myregistry/ardy-frontend:1.0.0
 
 # Pull from registry
-docker pull myregistry/ardy-backend:1.0.0
+docker pull myregistry/ardy-frontend:1.0.0
 ```
 
 ---
@@ -390,26 +304,26 @@ docker pull myregistry/ardy-backend:1.0.0
 
 ```bash
 # Real-time logs
-docker-compose logs -f backend
+docker-compose logs -f frontend
 
 # Last 50 lines
-docker-compose logs --tail=50 backend
+docker-compose logs --tail=50 frontend
 
 # With timestamps
-docker-compose logs -f --timestamps backend
+docker-compose logs -f --timestamps frontend
 ```
 
 ### Inspect Container
 
 ```bash
 # Get container info
-docker inspect ardy-backend
+docker inspect ardy-frontend
 
 # Get IP address
-docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ardy-backend
+docker inspect -f '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}' ardy-frontend
 
 # Get environment variables
-docker inspect -f '{{.Config.Env}}' ardy-backend
+docker inspect -f '{{.Config.Env}}' ardy-frontend
 ```
 
 ### Health Check Status
@@ -417,9 +331,6 @@ docker inspect -f '{{.Config.Env}}' ardy-backend
 ```bash
 # Check health
 docker-compose ps
-
-# Manual health check
-docker exec ardy-backend curl http://localhost:5000/api/health
 ```
 
 ---
@@ -501,10 +412,10 @@ docker-compose down -v && docker-compose up --build
 docker-compose logs -f --tail=50
 ```
 
-### Quick API Test
+### Quick Test
 
 ```bash
-docker-compose exec backend python test_api.py
+# (Wizard is accessible via browser at http://localhost:8501)
 ```
 
 ### Check All Ports
@@ -516,19 +427,19 @@ docker-compose ps
 ### Access Container Shell
 
 ```bash
-docker-compose exec backend bash
+docker-compose exec frontend bash
 ```
 
 ### Copy Files from Container
 
 ```bash
-docker cp ardy-backend:/app/data/soil_chemistry.csv ./
+docker cp ardy-frontend:/app/data/soil_chemistry.csv ./
 ```
 
 ### Copy Files to Container
 
 ```bash
-docker cp ./data/soil_chemistry.csv ardy-backend:/app/data/
+docker cp ./data/soil_chemistry.csv ardy-frontend:/app/data/
 ```
 
 ---

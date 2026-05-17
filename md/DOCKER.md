@@ -27,14 +27,11 @@ This command will:
 - Build Docker images for all services
 - Generate datasets (2000 soil samples, 350 yield records)
 - Train ML models (XGBoost, Random Forest, yield forecasting)
-- Start the backend API (Flask)
 - Start the frontend dashboard (Streamlit)
 
 ### 3. Access the Application
 
 - **Dashboard**: http://localhost:8501
-- **API Health**: http://localhost:5000/api/health
-- **API Documentation**: See README.md for endpoint details
 
 ### 4. Stop Services
 
@@ -48,14 +45,7 @@ docker-compose down
 
 ### Services
 
-**1. Backend Service (Flask API)**
-- Container: `ardy-backend`
-- Port: 5000
-- Image: Python 3.11 + Flask + ML libraries
-- Health Check: Enabled
-- Restart Policy: Unless stopped
-
-**2. Frontend Service (Streamlit Dashboard)**
+**1. Frontend Service (Streamlit Dashboard)**
 - Container: `ardy-frontend`
 - Port: 8501
 - Image: Python 3.11 + Streamlit
@@ -80,13 +70,6 @@ docker-compose down
 
 ### docker-compose.yml
 Main orchestration file defining all services, networks, and volumes.
-
-### Dockerfile.backend
-- Base Image: python:3.11-slim
-- Installs: Flask, ML libraries, system dependencies
-- Exposes: Port 5000
-- Health Check: Curl to /api/health endpoint
-- Process Manager: Gunicorn (4 workers)
 
 ### Dockerfile.frontend
 - Base Image: python:3.11-slim
@@ -115,9 +98,6 @@ Create a `.env` file in the project root (optional):
 # OpenWeatherMap API Key (optional)
 OPENWEATHER_API_KEY=your_api_key_here
 
-# Flask Configuration
-FLASK_ENV=production
-
 # Streamlit Configuration
 STREAMLIT_SERVER_PORT=8501
 STREAMLIT_SERVER_ADDRESS=0.0.0.0
@@ -128,14 +108,12 @@ If `OPENWEATHER_API_KEY` is not set, the system uses synthetic weather data.
 
 ### Port Mapping
 
-- Backend API: `5000:5000` (host:container)
 - Frontend Dashboard: `8501:8501` (host:container)
 
 Change port mappings in `docker-compose.yml` if needed:
 
 ```yaml
 ports:
-  - "8000:5000"  # Access backend at localhost:8000
   - "8080:8501"  # Access frontend at localhost:8080
 ```
 
@@ -164,47 +142,23 @@ This process takes approximately 2-3 minutes.
 
 ## 🚨 Troubleshooting
 
-### Backend Service Won't Start
+### Frontend Service Won't Start
 
 ```bash
 # Check logs
-docker-compose logs backend
+docker-compose logs frontend
 
-# Verify health check
+# Verify status
 docker-compose ps
 
 # Rebuild image
-docker-compose build --no-cache backend
-```
-
-### Frontend Can't Connect to Backend
-
-```bash
-# Check network connectivity
-docker-compose exec frontend curl http://backend:5000/api/health
-
-# Check backend is running
-docker-compose ps backend
-
-# Restart both services
-docker-compose restart backend frontend
-```
-
-### Out of Memory
-
-```bash
-# Check memory usage
-docker stats
-
-# Increase Docker memory limit in Docker Desktop settings
-# Or reduce model complexity in train_models.py
+docker-compose build --no-cache frontend
 ```
 
 ### Port Already in Use
 
 ```bash
 # Find process using port
-lsof -i :5000
 lsof -i :8501
 
 # Change ports in docker-compose.yml
@@ -215,7 +169,7 @@ lsof -i :8501
 
 ```bash
 # Check volume mounts
-docker-compose exec backend ls -la /app/data
+docker-compose exec frontend ls -la /app/data
 
 # Verify volumes in docker-compose.yml
 docker volume ls
@@ -225,19 +179,6 @@ docker volume ls
 
 ## 🧪 Testing
 
-### Test API Endpoints
-
-```bash
-# Access backend container
-docker-compose exec backend bash
-
-# Run tests inside container
-python test_api.py
-
-# Or from host (if backend is running)
-curl http://localhost:5000/api/health
-```
-
 ### View Logs
 
 ```bash
@@ -245,7 +186,6 @@ curl http://localhost:5000/api/health
 docker-compose logs -f
 
 # Specific service
-docker-compose logs -f backend
 docker-compose logs -f frontend
 
 # Last 100 lines
@@ -253,45 +193,6 @@ docker-compose logs --tail=100
 ```
 
 ---
-
-## 📈 Performance Tuning
-
-### Backend (Gunicorn)
-
-Modify `Dockerfile.backend`:
-
-```dockerfile
-# Increase workers for more concurrent requests
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "8", ...]
-
-# Adjust timeout for long-running requests
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--timeout", "300", ...]
-```
-
-### Frontend (Streamlit)
-
-Modify `Dockerfile.frontend`:
-
-```dockerfile
-# Add Streamlit configuration
-RUN mkdir -p ~/.streamlit && \
-    echo "[client]\nthrottling.min_cache_entry_size = 0" > ~/.streamlit/config.toml
-```
-
-### Memory Limits
-
-Add to `docker-compose.yml`:
-
-```yaml
-services:
-  backend:
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-        reservations:
-          memory: 1G
-```
 
 ---
 
@@ -322,19 +223,11 @@ services:
 
 ```yaml
 services:
-  backend:
+  frontend:
     build: .
     ports:
-      - "5000:5000"
-    environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY}
+      - "8501:8501"
     restart: always
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
 ```
 
 ---
@@ -344,14 +237,8 @@ services:
 ### Custom Model Training
 
 ```bash
-# Access backend container
-docker-compose exec backend bash
-
-# Retrain models with custom parameters
-python train_models.py
-
-# Regenerate datasets
-python generate_datasets.py
+# Run the model trainer service
+docker-compose up model-trainer
 ```
 
 ### Scaling
@@ -360,7 +247,7 @@ For production with multiple replicas:
 
 ```yaml
 services:
-  backend:
+  frontend:
     deploy:
       replicas: 3
       update_config:
@@ -403,7 +290,7 @@ docker-compose down
 docker-compose logs -f
 
 # Execute command in container
-docker-compose exec backend bash
+docker-compose exec frontend bash
 
 # Remove volumes
 docker-compose down -v
@@ -412,7 +299,7 @@ docker-compose down -v
 docker-compose build --no-cache
 
 # Scale service
-docker-compose up -d --scale backend=3
+docker-compose up -d --scale frontend=3
 
 # View resource usage
 docker stats
@@ -457,7 +344,6 @@ jobs:
 - [Docker Documentation](https://docs.docker.com/)
 - [Docker Compose Documentation](https://docs.docker.com/compose/)
 - [Python Docker Best Practices](https://docs.docker.com/language/python/)
-- [Flask Deployment](https://flask.palletsprojects.com/deployment/)
 - [Streamlit Deployment](https://docs.streamlit.io/streamlit-community-cloud/deploy-your-app)
 
 ---
@@ -468,9 +354,8 @@ For issues:
 
 1. Check logs: `docker-compose logs -f`
 2. Verify configuration: `docker-compose config`
-3. Test connectivity: `docker-compose exec backend curl http://localhost:5000/api/health`
-4. Review README.md for API documentation
-5. Check QUICKSTART.md for general troubleshooting
+3. Review README.md for documentation
+4. Check QUICKSTART.md for general troubleshooting
 
 ---
 

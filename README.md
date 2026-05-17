@@ -80,7 +80,6 @@ Entire engine hosted on Streamlit platform, featuring:
 
 | Component | Technology |
 |-----------|-----------|
-| **Backend API** | Flask, Flask-CORS |
 | **Frontend Dashboard** | Streamlit, Streamlit-Folium |
 | **Machine Learning** | XGBoost, Random Forest, Scikit-learn, CatBoost |
 | **Data Processing** | Pandas, NumPy |
@@ -97,10 +96,10 @@ Entire engine hosted on Streamlit platform, featuring:
 
 ```
 ardy-smart-agriculture/
-├── app.py                          # Streamlit dashboard
-├── backend.py                      # Flask API server
+├── app_wizard.py                   # Streamlit wizard dashboard
 ├── train_models.py                 # ML model training script
 ├── generate_datasets.py            # Dataset generation script
+├── retrain_models.py               # Retrain with soil chemistry data
 ├── run.sh                          # Startup script
 ├── requirements.txt                # Python dependencies
 ├── README.md                       # This file
@@ -163,83 +162,20 @@ ardy-smart-agriculture/
 
 **Option 2: Manual startup**
 
-Terminal 1 - Start Flask backend:
 ```bash
 source venv/bin/activate
-python backend.py
-```
-
-Terminal 2 - Start Streamlit frontend:
-```bash
-source venv/bin/activate
-streamlit run app.py
+streamlit run app_wizard.py
 ```
 
 ### Access the Application
 
 - **Streamlit Dashboard**: http://localhost:8501
-- **Flask API**: http://localhost:5000
-- **API Health Check**: http://localhost:5000/api/health
 
 ---
 
-## 📡 API Endpoints
+## 📡 Plant Doctor API
 
-### Health & Reference Data
-
-- `GET /api/health` - System health check
-- `GET /api/governorates` - List all Egyptian governorates
-
-### Weather & Environment
-
-- `GET /api/weather/<governorate>` - Get live weather for a governorate
-
-### Crop Recommendation
-
-- `POST /api/recommend-crop` - Get crop recommendation
-  ```json
-  {
-    "n": 50,
-    "p": 25,
-    "k": 150,
-    "ph": 7.0
-  }
-  ```
-
-### Yield Forecasting
-
-- `POST /api/forecast-yield` - Forecast crop yield
-  ```json
-  {
-    "crop": "Wheat",
-    "year": 2026
-  }
-  ```
-
-### Explainability
-
-- `POST /api/shap-explanation` - Get SHAP explanation
-  ```json
-  {
-    "n": 50,
-    "p": 25,
-    "k": 150,
-    "ph": 7.0
-  }
-  ```
-
-### Report Generation
-
-- `POST /api/generate-report` - Generate PDF report
-  ```json
-  {
-    "governorate": "Cairo",
-    "n": 50,
-    "p": 25,
-    "k": 150,
-    "ph": 7.0
-  }
-  ```
+The Plant Doctor module provides a separate API for disease diagnosis. See the `plant_doctor/` directory for details.
 
 ---
 
@@ -379,40 +315,7 @@ Edit `train_models.py`:
 
 ## 🧪 Testing
 
-### Test Crop Recommendation
-
-```python
-import requests
-
-response = requests.post(
-    'http://localhost:5000/api/recommend-crop',
-    json={'n': 60, 'p': 30, 'k': 200, 'ph': 7.2}
-)
-print(response.json())
-```
-
-### Test Yield Forecasting
-
-```python
-import requests
-
-response = requests.post(
-    'http://localhost:5000/api/forecast-yield',
-    json={'crop': 'Wheat', 'year': 2026}
-)
-print(response.json())
-```
-
-### Test Weather Data
-
-```python
-import requests
-
-response = requests.get(
-    'http://localhost:5000/api/weather/Cairo'
-)
-print(response.json())
-```
+The wizard app handles all predictions in-app. Simply open http://localhost:8501 and use the step-by-step interface.
 
 ---
 
@@ -448,21 +351,10 @@ Feature Importance:
 
 ## 🚨 Troubleshooting
 
-### Backend not starting
+### PDF report generation fails
 ```bash
-# Check if port 5000 is in use
-lsof -i :5000
-# Kill process if needed
-kill -9 <PID>
-```
-
-### Streamlit not connecting to backend
-```bash
-# Verify backend is running
-curl http://localhost:5000/api/health
-
-# Check network connectivity
-ping localhost
+# Ensure reportlab is installed
+pip install reportlab
 ```
 
 ### Models not found
@@ -485,7 +377,7 @@ n_samples = 1000  # Reduce from 2000
 - **XGBoost Documentation**: https://xgboost.readthedocs.io/
 - **SHAP Documentation**: https://shap.readthedocs.io/
 - **Streamlit Documentation**: https://docs.streamlit.io/
-- **Flask Documentation**: https://flask.palletsprojects.com/
+- **ReportLab Documentation**: https://www.reportlab.com/docs/
 - **FAOSTAT**: http://www.fao.org/faostat/
 - **OpenWeatherMap API**: https://openweathermap.org/api
 

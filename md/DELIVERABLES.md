@@ -8,12 +8,11 @@
   - Real-time visualizations with Plotly and Folium
   - Responsive UI with custom CSS styling
 
-- [x] **backend.py** (18 KB)
-  - Flask REST API server
-  - 7 API endpoints fully implemented
-  - Model inference and prediction
-  - PDF report generation
-  - Error handling and logging
+- [x] **PDF report generation** (in `app_wizard.py`)
+  - Direct PDF generation with ReportLab
+  - Soil analysis, weather, and crop recommendation tables
+  - Land size and production forecasting
+  - No external API dependencies
 
 - [x] **train_models.py** (5.2 KB)
   - ML model training pipeline

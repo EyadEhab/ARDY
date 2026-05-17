@@ -37,16 +37,10 @@ python train_models.py
 
 **Option B: Manual (Two Terminals)**
 
-Terminal 1 - Start Backend:
+Start the Wizard:
 ```bash
 source venv/bin/activate
-python backend.py
-```
-
-Terminal 2 - Start Frontend:
-```bash
-source venv/bin/activate
-streamlit run app.py
+streamlit run app_wizard.py
 ```
 
 ### Step 6: Access the Application
@@ -102,7 +96,7 @@ This will test all endpoints and generate a sample PDF report.
 ```
 ardy-smart-agriculture/
 ├── app.py                      # Streamlit dashboard
-├── backend.py                  # Flask API
+├── app_wizard.py               # Streamlit wizard dashboard
 ├── train_models.py             # Model training
 ├── generate_datasets.py        # Data generation
 ├── test_api.py                 # API tests
@@ -146,17 +140,11 @@ lsof -i :5000
 kill -9 <PID>
 ```
 
-### Streamlit won't connect
-```bash
-# Verify backend is running
-curl http://localhost:5000/api/health
-```
-
 ### Models not found
 ```bash
 # Regenerate datasets and train models
 python generate_datasets.py
-python train_models.py
+python retrain_models.py
 ```
 
 ### Port already in use
@@ -196,7 +184,7 @@ streamlit run app.py --server.port=8502
 ## 🎓 Learning Resources
 
 - **Machine Learning**: XGBoost, Random Forest, Linear Regression
-- **Web Framework**: Flask (Backend), Streamlit (Frontend)
+- **Web Framework**: Streamlit
 - **Explainability**: Feature importance analysis
 - **Geospatial**: Folium maps, Egyptian governorate data
 - **Data Science**: Pandas, NumPy, Scikit-learn
@@ -206,7 +194,7 @@ streamlit run app.py --server.port=8502
 ## 💡 Tips
 
 - Use the test script to verify everything is working
-- Check backend logs if frontend can't connect
+- Check Streamlit console output for errors
 - Adjust soil property sliders to see different recommendations
 - Export PDF reports for offline analysis
 - Modify datasets in `data/` to customize predictions

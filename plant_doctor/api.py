@@ -2,26 +2,17 @@ import os
 import json
 import logging
 import io
-import time
 import uuid
 import hashlib
-from datetime import datetime, timedelta
-from typing import Optional, List
+from datetime import datetime
 from contextlib import asynccontextmanager
 from contextvars import ContextVar
 
 import numpy as np
 import tensorflow as tf
 import redis
-from fastapi import FastAPI, File, UploadFile, HTTPException, status, Request, Depends
-from fastapi.responses import JSONResponse
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi import FastAPI, File, UploadFile, HTTPException, Request
 from PIL import Image
-from sqlalchemy import Column, Integer, String, Float, DateTime, ForeignKey, Text, create_engine
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, Session
-from jose import JWTError, jwt
-from passlib.context import CryptContext
 
 # ==========================================
 # 1. ENTERPRISE LOGGING CONFIGURATION
@@ -52,49 +43,14 @@ logger = logging.getLogger("PlantDoctorAPI")
 # ==========================================
 # 2. CONFIGURATION & ENVIRONMENT
 # ==========================================
-SECRET_KEY = os.getenv("SECRET_KEY", "your-super-secret-key-for-plant-doctor-saas")
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 
-
-# DB Config - Defaults match docker-compose service names
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://admin:plant_doctor_secure@ardy-db:5432/plant_doctor_db")
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
-
-# App Config
 REDIS_URL = os.getenv("REDIS_URL", "redis://ardy-redis:6379/0")
 MODEL_PATH = os.getenv("MODEL_PATH", "crop_model.h5")
 TREATMENTS_PATH = os.getenv("TREATMENTS_PATH", "treatments.json")
 MAX_FILE_SIZE = 5 * 1024 * 1024
 IMG_SIZE = (224, 224)
 
-pwd_context = CryptContext(schemes=["sha256_crypt"], deprecated="auto")
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
-
 # ==========================================
-# 3. DATABASE MODELS
-# ==========================================
-class User(Base):
-    __tablename__ = "users"
-    id = Column(Integer, primary_key=True, index=True)
-    username = Column(String, unique=True, index=True)
-    hashed_password = Column(String)
-    tier = Column(String, default="Free")
-
-class ScanHistory(Base):
-    __tablename__ = "scan_history"
-    id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    disease = Column(String)
-    confidence = Column(Float)
-    treatment = Column(Text)
-    timestamp = Column(DateTime, default=datetime.utcnow)
-
-Base.metadata.create_all(bind=engine)
-
-# ==========================================
-# 4. GLOBAL STATE & LIFECYCLE
+# 3. GLOBAL STATE & LIFECYCLE
 # ==========================================
 state = {
     "model": None,
@@ -141,7 +97,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="Plant Doctor AI SaaS", lifespan=lifespan)
 
 # ==========================================
-# 5. MIDDLEWARE
+# 4. MIDDLEWARE
 # ==========================================
 @app.middleware("http")
 async def add_request_id_middleware(request: Request, call_next):
@@ -156,33 +112,7 @@ async def add_request_id_middleware(request: Request, call_next):
         request_id_ctx.reset(token)
 
 # ==========================================
-# 6. AUTH & DB DEPENDENCIES
-# ==========================================
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-def create_access_token(data: dict):
-    to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
-async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
-    try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None: raise HTTPException(status_code=401)
-    except JWTError: raise HTTPException(status_code=401)
-    user = db.query(User).filter(User.username == username).first()
-    if user is None: raise HTTPException(status_code=401)
-    return user
-
-# ==========================================
-# 7. ENDPOINTS
+# 5. ENDPOINTS
 # ==========================================
 
 @app.get("/")
@@ -197,22 +127,6 @@ def health_check():
         "timestamp": datetime.utcnow().isoformat()
     }
 
-@app.post("/register")
-def register(username: str, password: str, db: Session = Depends(get_db)):
-    db_user = db.query(User).filter(User.username == username).first()
-    if db_user: raise HTTPException(status_code=400, detail="User already exists")
-    new_user = User(username=username, hashed_password=pwd_context.hash(password))
-    db.add(new_user)
-    db.commit()
-    return {"message": "Registration successful"}
-
-@app.post("/token")
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.username == form_data.username).first()
-    if not user or not pwd_context.verify(form_data.password, user.hashed_password):
-        raise HTTPException(status_code=400, detail="Invalid credentials")
-    return {"access_token": create_access_token(data={"sub": user.username}), "token_type": "bearer"}
-
 @app.post("/predict")
 async def predict(file: UploadFile = File(...)):
     """Predict plant disease from uploaded image."""
@@ -223,6 +137,10 @@ async def predict(file: UploadFile = File(...)):
         contents = await file.read()
         if len(contents) > MAX_FILE_SIZE:
             raise HTTPException(status_code=413, detail="File too large")
+
+        # Validate image format
+        if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+            raise HTTPException(status_code=400, detail="Invalid image format. Please upload a JPEG or PNG file.")
 
         # MD5 Cache check
         img_hash = hashlib.md5(contents).hexdigest()
@@ -260,8 +178,3 @@ async def predict(file: UploadFile = File(...)):
     except Exception as e:
         logger.error(f"Prediction error: {e}")
         raise HTTPException(status_code=500, detail=str(e))
-
-@app.get("/history")
-def get_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Retrieve scan history for the authenticated user."""
-    return db.query(ScanHistory).filter(ScanHistory.user_id == current_user.id).all()
