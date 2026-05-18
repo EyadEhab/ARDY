@@ -181,6 +181,23 @@ for crop in crops_to_train:
     print(f"    → Using {best_name} (R²={best_r2:.4f}) because its accuracy is better than {other_name} (R²={other_r2:.4f})")
     print(f"    → 2026 Predicted Yield: {pred_2026:.2f} kg/ha")
 
+# Summary: count which model won most crops
+lr_wins = sum(1 for m in yield_models.values() if m['best_model'] == 'LinearRegression')
+rf_wins = sum(1 for m in yield_models.values() if m['best_model'] == 'RandomForestRegressor')
+
+print(f"\n  {'='*50}")
+print(f"  YIELD FORECASTING SUMMARY")
+print(f"  {'='*50}")
+print(f"  LinearRegression won:      {lr_wins} / {len(yield_models)} crops")
+print(f"  RandomForestRegressor won:  {rf_wins} / {len(yield_models)} crops")
+if rf_wins > lr_wins:
+    print(f"  → RandomForestRegressor is the overall best model for yield forecasting")
+elif lr_wins > rf_wins:
+    print(f"  → LinearRegression is the overall best model for yield forecasting")
+else:
+    print(f"  → Both models tied overall")
+print(f"  {'='*50}")
+
 # Save yield models
 with open('models/yield_models.pkl', 'wb') as f:
     pickle.dump(yield_models, f)

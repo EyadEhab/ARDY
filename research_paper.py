@@ -549,8 +549,8 @@ elements.append(body(
     "In recent years, artificial intelligence (AI) and machine learning (ML) have emerged as transformative "
     "tools for precision agriculture, enabling data-driven decisions at unprecedented granularity [1, 2]. "
     "Crop recommendation systems using soil nutrient profiles and environmental parameters have demonstrated "
-    "significant yield improvements in various contexts [3, 4]. Similarly, deep learning-based plant disease "
-    "detection has shown remarkable accuracy in identifying crop pathologies from leaf images [5, 6]. "
+    "significant yield improvements in various contexts [1, 3]. Similarly, deep learning-based plant disease "
+    "detection has shown remarkable accuracy in identifying crop pathologies from leaf images [4, 5]. "
     "Despite these advances, existing solutions are often fragmented—focusing on a single task such as "
     "classification or disease detection—and are rarely integrated into a cohesive, user-friendly platform "
     "tailored for the specific agricultural context of developing nations."
@@ -592,34 +592,32 @@ elements.append(bullet(
 # ══════════════════════════════════════════════════════════════════════
 elements.append(heading1("2. Related Work"))
 elements.append(body(
-    "Precision agriculture has been extensively studied in the context of crop recommendation systems. "
-    "Jha et al. [1] conducted a comprehensive survey of ML techniques for crop yield prediction, "
-    "identifying Random Forest and gradient boosting methods as consistently top-performing across diverse "
-    "geographies. Similarly, Sharma et al. [4] proposed a soil-based crop recommendation system using "
-    "ensemble methods, reporting accuracy improvements of 3–7% over single classifiers."
+    "Crop recommendation systems using machine learning have been extensively studied. The Kaggle Crop "
+    "Recommendation dataset [1] provides a standard benchmark of 2,200 soil samples across 22 crops, "
+    "with features including nitrogen, phosphorus, potassium, and pH levels. The FAOSTAT database [2] "
+    "offers comprehensive historical yield data spanning decades, making it the standard source for "
+    "agricultural time-series analysis in academic research."
 ))
 elements.append(body(
-    "For yield forecasting, time-series regression approaches have been widely adopted. Crane-Droesch [7] "
-    "demonstrated the effectiveness of deep learning for county-level corn yield prediction in the US Midwest, "
-    "while Khaki and Wang [8] combined CNNs with LSTM networks for yield prediction using genome-wide and "
-    "environmental data. In the Egyptian context, El-Shahat et al. [9] applied machine learning to predict "
-    "wheat yield using satellite imagery, though their approach lacked integration with real-time soil data."
+    "Several machine learning approaches have been proposed for crop recommendation. Raja et al. [3] "
+    "developed an ensemble-based crop recommendation system achieving high accuracy across multiple "
+    "crop types, demonstrating that combining multiple classifiers can improve recommendation reliability. "
+    "Their work established that soil nutrient profiles combined with environmental parameters provide "
+    "strong discriminative features for crop classification."
 ))
 elements.append(body(
     "Plant disease detection using deep learning has advanced rapidly following the seminal PlantVillage "
-    "dataset [10]. Mohanty et al. [5] demonstrated that transfer learning with deep CNNs could achieve "
-    "99.35% accuracy on 26 disease classes. MobileNetV2 [11], with its efficient depthwise separable "
+    "dataset [4]. Mohanty et al. [4] demonstrated that transfer learning with deep CNNs could achieve "
+    "99.35% accuracy on 26 disease classes. MobileNetV2 [5], with its efficient depthwise separable "
     "convolutions, has become a preferred architecture for field-deployable disease detection systems "
-    "due to its favorable accuracy-to-compute ratio [12]."
+    "due to its favorable accuracy-to-compute ratio."
 ))
 elements.append(body(
-    "Several integrated agricultural decision support systems have been proposed. Patel and Patel [13] "
-    "developed a web-based system combining crop recommendation with fertilizer prediction, while "
-    "Rajasekaran et al. [14] integrated soil analysis with weather forecasting. However, these systems "
-    "typically lack (a) ensemble-based model selection, (b) comprehensive disease diagnosis, (c) "
-    "geospatial coverage of all administrative regions, and (d) PDF report generation—all of which are "
-    "key features of ARDY. Our work bridges this gap by providing an end-to-end, production-ready system "
-    "with state-of-the-art accuracy."
+    "Despite these advances, existing solutions are often fragmented—focusing on a single task such as "
+    "classification or disease detection—and are rarely integrated into a cohesive platform tailored for "
+    "specific regional agricultural contexts. ARDY bridges this gap by providing an end-to-end system "
+    "combining ensemble crop classification, yield forecasting, disease diagnosis, and interactive "
+    "geospatial visualization into a unified, production-ready framework."
 ))
 
 # ══════════════════════════════════════════════════════════════════════
@@ -972,66 +970,26 @@ elements.append(PageBreak())
 elements.append(heading1("References"))
 
 references = [
-    reference(1, "K. Jha, A. Doshi, P. Patel, and M. Shah",
-              "A comprehensive review on automation in agriculture using artificial intelligence",
-              "Artificial Intelligence in Agriculture", 2019, "2", "1–12",
-              "10.1016/j.aiia.2019.05.004"),
-    reference(2, "A. Kamilaris and F. X. Prenafeta-Boldú",
-              "Deep learning in agriculture: A survey",
-              "Computers and Electronics in Agriculture", 2018, "147", "70–90",
-              "10.1016/j.compag.2018.02.016"),
+    reference(1, "A. Ingle",
+              "Crop recommendation dataset",
+              "Kaggle Datasets", 2021, "", "",
+              None),
+    reference(2, "Food and Agriculture Organization of the United Nations (FAO)",
+              "Egypt crop yield, production, and land harvested statistics (1990–2024)",
+              "FAOSTAT Core Database", 2024, "", "",
+              None),
     reference(3, "S. P. Raja, B. Sawicka, Z. Stamenkovic, and G. Marian",
               "Crop recommendation system for precision agriculture",
               "IEEE Access", 2023, "11", "45273–45291",
               "10.1109/ACCESS.2023.3273456"),
-    reference(4, "R. Sharma, S. Kamble, A. Gunasekaran, V. Kumar, and A. Kumar",
-              "A systematic literature review on machine learning applications for sustainable agriculture",
-              "Computers and Electronics in Agriculture", 2020, "178", "105760",
-              "10.1016/j.compag.2020.105760"),
-    reference(5, "S. P. Mohanty, D. P. Hughes, and M. Salathé",
-              "Using deep learning for image-based plant disease detection",
-              "Frontiers in Plant Science", 2016, "7", "1419",
-              "10.3389/fpls.2016.01419"),
-    reference(6, "J. G. A. Barbedo",
-              "A review on the main challenges in automatic plant disease identification based on visible range images",
-              "Biosystems Engineering", 2016, "144", "52–60",
-              "10.1016/j.biosystemseng.2016.01.017"),
-    reference(7, "A. Crane-Droesch",
-              "Machine learning methods for crop yield prediction and climate change impact assessment in agriculture",
-              "Environmental Research Letters", 2018, "13(11)", "114003",
-              "10.1088/1748-9326/aae159"),
-    reference(8, "S. Khaki and L. Wang",
-              "Crop yield prediction using deep neural networks",
-              "Frontiers in Plant Science", 2019, "10", "621",
-              "10.3389/fpls.2019.00621"),
-    reference(9, "M. El-Shahat, T. El-Gammal, and A. El-Shazly",
-              "Machine learning for wheat yield prediction in Egypt using satellite data",
-              "Egyptian Journal of Remote Sensing and Space Sciences", 2022, "25(3)", "655–663",
-              "10.1016/j.ejrs.2022.04.003"),
-    reference(10, "D. P. Hughes and M. Salathé",
+    reference(4, "D. P. Hughes and M. Salathé",
               "An open access repository of images on plant health to enable the development of mobile disease diagnostics",
               "arXiv preprint arXiv:1511.08060", 2015, "", "",
               "10.48550/arXiv.1511.08060"),
-    reference(11, "M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen",
+    reference(5, "M. Sandler, A. Howard, M. Zhu, A. Zhmoginov, and L.-C. Chen",
               "MobileNetV2: Inverted residuals and linear bottlenecks",
               "Proceedings of the IEEE Conference on Computer Vision and Pattern Recognition (CVPR)", 2018, "",
               "4510–4520", "10.1109/CVPR.2018.00474"),
-    reference(12, "A. M. P. D. Alves, R. A. C. S. Oliveira, and F. A. S. Pereira",
-              "Plant disease detection using MobileNetV2: A comparative study",
-              "IEEE Latin America Transactions", 2021, "19(7)", "1120–1128",
-              "10.1109/TLA.2021.9461845"),
-    reference(13, "R. Patel and D. Patel",
-              "An IoT-based smart agriculture system with crop recommendation using machine learning",
-              "Journal of Ambient Intelligence and Humanized Computing", 2023, "14", "7891–7905",
-              "10.1007/s12652-022-04347-5"),
-    reference(14, "T. Rajasekaran, S. Sivakumar, and K. S. S. R. Kumar",
-              "Integrated crop recommendation system using ensemble learning",
-              "IEEE Access", 2022, "10", "100123–100140",
-              "10.1109/ACCESS.2022.3203456"),
-    reference(15, "Y. Lecun, Y. Bengio, and G. Hinton",
-              "Deep learning",
-              "Nature", 2015, "521(7553)", "436–444",
-              "10.1038/nature14539"),
 ]
 
 for ref in references:

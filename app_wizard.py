@@ -183,6 +183,21 @@ def get_weather_data(governorate):
         weather_data['rainfall'] = GOVERNORATE_RAINFALL.get(governorate, crop_rec_df['rainfall'].mean())
         return weather_data
 
+def get_yearly_averages(governorate):
+    """Get yearly average temperature and humidity for a governorate"""
+    climate = GOVERNORATE_CLIMATE.get(governorate)
+    if climate:
+        return {
+            'avg_temperature': climate['avg_temperature'],
+            'avg_humidity': climate['avg_humidity'],
+            'source': 'Yearly Climate Average'
+        }
+    return {
+        'avg_temperature': crop_rec_df['temperature'].mean(),
+        'avg_humidity': crop_rec_df['humidity'].mean(),
+        'source': 'Dataset Average'
+    }
+
 def predict_crops(n, p, k, temperature, humidity, ph, rainfall):
     """Predict top 3 crops with confidence scores and explanations"""
     
@@ -317,7 +332,7 @@ CROP_NAME_MAPPING = {
 # Average annual rainfall (mm) per Egyptian governorate
 GOVERNORATE_RAINFALL = {
     'Alexandria': 190.0,
-    'Port Said': 125.0,
+    'Port Said': 83.0,
     'Matrouh': 140.0,
     'Damietta': 95.0,
     'North Sinai': 80.0,
@@ -326,18 +341,44 @@ GOVERNORATE_RAINFALL = {
     'Dakahlia': 35.0,
     'Cairo': 25.0,
     'Giza': 22.0,
-    'Ismailia': 28.0,
-    'Suez': 25.0,
+    'Ismailia': 37.0,
+    'Suez': 17.0,
     'South Sinai': 20.0,
     'Fayoum': 12.0,
     'Beni Suef': 6.0,
-    'Minya': 4.0,
-    'Assiut': 2.5,
+    'Minya': 5.0,
+    'Assiut': 0.0,
     'Red Sea': 5.0,
-    'Sohag': 1.5,
+    'Sohag': 1.0,
     'Qena': 1.5,
     'Luxor': 1.0,
     'Aswan': 0.5,
+}
+
+# Average yearly temperature (°C) and humidity (%) per Egyptian governorate
+GOVERNORATE_CLIMATE = {
+    'Matrouh':      {'avg_temperature': 21.9, 'avg_humidity': 65},
+    'Alexandria':   {'avg_temperature': 22.6, 'avg_humidity': 64},
+    'Port Said':    {'avg_temperature': 22.5, 'avg_humidity': 65},
+    'Damietta':     {'avg_temperature': 22.3, 'avg_humidity': 67},
+    'North Sinai':  {'avg_temperature': 23.2, 'avg_humidity': 60},
+    'Kafr El-Sheikh': {'avg_temperature': 23.8, 'avg_humidity': 62},
+    'Beheira':      {'avg_temperature': 24.0, 'avg_humidity': 60},
+    'Dakahlia':     {'avg_temperature': 23.6, 'avg_humidity': 62},
+    'Cairo':        {'avg_temperature': 24.9, 'avg_humidity': 56},
+    'Giza':         {'avg_temperature': 24.9, 'avg_humidity': 55},
+    'Ismailia':     {'avg_temperature': 24.6, 'avg_humidity': 50},
+    'Suez':         {'avg_temperature': 25.0, 'avg_humidity': 48},
+    'Fayoum':       {'avg_temperature': 25.9, 'avg_humidity': 40},
+    'Beni Suef':    {'avg_temperature': 25.9, 'avg_humidity': 38},
+    'Minya':        {'avg_temperature': 25.6, 'avg_humidity': 35},
+    'Assiut':       {'avg_temperature': 25.9, 'avg_humidity': 33},
+    'Sohag':        {'avg_temperature': 26.3, 'avg_humidity': 30},
+    'Qena':         {'avg_temperature': 27.5, 'avg_humidity': 28},
+    'Luxor':        {'avg_temperature': 27.6, 'avg_humidity': 27},
+    'Aswan':        {'avg_temperature': 28.8, 'avg_humidity': 26},
+    'Red Sea':      {'avg_temperature': 26.6, 'avg_humidity': 32},
+    'South Sinai':  {'avg_temperature': 23.0, 'avg_humidity': 42},
 }
 
 def predict_yield(crop, year=2026):
@@ -549,6 +590,7 @@ if 'wizard_data' not in st.session_state:
     st.session_state.wizard_data = {
         'governorate': None,
         'weather': None,
+        'yearly_averages': None,
         'n': None,
         'p': None,
         'k': None,
@@ -658,6 +700,9 @@ if st.session_state.current_step == 1:
             weather_data = get_weather_data(selected_gov)
             st.session_state.wizard_data['weather'] = weather_data
 
+            yearly_avg = get_yearly_averages(selected_gov)
+            st.session_state.wizard_data['yearly_averages'] = yearly_avg
+
             st.success(f"✓ Selected: **{selected_gov}**")
 
             # Display weather information
@@ -681,6 +726,20 @@ if st.session_state.current_step == 1:
 
             with col_w2:
                 st.metric("💨 Humidity", f"{weather_data['humidity']:.1f}%")
+
+            st.markdown("---")
+            st.markdown("##### 📊 Yearly Climate Average")
+            col_ya1, col_ya2 = st.columns(2)
+            with col_ya1:
+                st.metric("🌡️ Avg Yearly Temperature", f"{yearly_avg['avg_temperature']:.1f}°C")
+            with col_ya2:
+                st.metric("💨 Avg Yearly Humidity", f"{yearly_avg['avg_humidity']:.1f}%")
+
+            st.info(
+                f"🌤️ **Weather Data Reference** — "
+                f"API (Live): {weather_data['temperature']:.1f}°C / {weather_data['humidity']:.1f}%  |  "
+                f"Yearly Avg: {yearly_avg['avg_temperature']:.1f}°C / {yearly_avg['avg_humidity']:.1f}%"
+            )
 
             # Next button
             st.divider()
@@ -728,11 +787,12 @@ elif st.session_state.current_step == 2:
     # Get crop predictions
     if st.button("🔍 Get Crop Recommendations", width='stretch', key='get_recommendations'):
         weather = st.session_state.wizard_data['weather']
+        avg = st.session_state.wizard_data['yearly_averages']
         
         predictions = predict_crops(
             n, p, k,
-            weather['temperature'],
-            weather['humidity'],
+            avg['avg_temperature'],
+            avg['avg_humidity'],
             ph, 
             weather['rainfall']
         )
@@ -1034,9 +1094,11 @@ elif st.session_state.current_step == 4:
             wd = st.session_state.wizard_data
             writer.writerow(['Location', 'Governorate', wd['governorate']])
             
+            if wd.get('yearly_averages'):
+                avg = wd['yearly_averages']
+                writer.writerow(['Weather', 'Avg Yearly Temperature', f"{avg['avg_temperature']:.1f} °C"])
+                writer.writerow(['Weather', 'Avg Yearly Humidity', f"{avg['avg_humidity']:.1f} %"])
             if wd.get('weather'):
-                writer.writerow(['Weather', 'Temperature', f"{wd['weather']['temperature']:.1f} °C"])
-                writer.writerow(['Weather', 'Humidity', f"{wd['weather']['humidity']:.1f} %"])
                 writer.writerow(['Weather', 'Rainfall', f"{wd['weather']['rainfall']:.1f} mm"])
             
             writer.writerow(['Soil', 'Nitrogen (N)', f"{wd['n']} mg/kg"])
@@ -1084,6 +1146,7 @@ elif st.session_state.current_step == 4:
             st.session_state.wizard_data = {
                 'governorate': None,
                 'weather': None,
+                'yearly_averages': None,
                 'n': None,
                 'p': None,
                 'k': None,
